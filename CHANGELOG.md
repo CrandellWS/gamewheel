@@ -2,6 +2,27 @@
 
 All notable changes to GameWheel will be documented in this file.
 
+## [2.1.0] - 2025-01-14
+
+### Added
+- **Dramatic Visual Tier System**: Implemented maximum-impact visual hierarchy
+  - North position: 2.0x size with gold theme, radial rays, and star markers
+  - Cardinal directions: 1.6x size with silver theme and diagonal stripes
+  - Intercardinal positions: 1.3x size with subtle enhancements
+  - Multi-stop gradients with intelligent color lighting/darkening
+  - Pattern overlays for premium tiers (rays and stripes)
+  - Corner markers (stars and circles) for visual distinction
+  - Enhanced text scaling up to 2.0x for maximum readability
+  - Tier-based shadows and glows for depth perception
+  - Pulsing animations during spin only (clean idle state)
+
+### Technical
+- Color manipulation utilities (hex/RGB conversion, lighten/darken)
+- Tier detection system based on compass positions
+- Configurable visual effects per tier level
+- Optimized canvas rendering with proper save/restore
+- Performance maintained at 60fps with all effects
+
 ## [2.0.1] - 2025-01-14
 
 ### 📚 Documentation Updates

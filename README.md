@@ -195,6 +195,34 @@ curl -X POST https://your-domain.com/api/chat-submit \
 - Eliminated entries are marked in history
 - Best for: Tournaments, battle royale style selection, competitive events
 
+## Visual Features
+
+### Dynamic Tier System
+The wheel features a dramatic 4-tier visual hierarchy based on compass positions:
+
+**🏆 Tier 1 - Grand Prize (North)**
+- 2.0x slice size - twice as large!
+- Gold theme with radial ray patterns
+- Star corner markers
+- Maximum text visibility
+
+**🥈 Tier 2 - Major Prizes (E/S/W Cardinals)**
+- 1.6x slice size
+- Silver/platinum shimmer theme
+- Diagonal stripe patterns
+- Circle corner markers
+
+**🥉 Tier 3 - Minor Prizes (NE/SE/SW/NW)**
+- 1.3x slice size
+- Enhanced brightness
+- Subtle glow effects
+
+**📍 Tier 4 - Standard Positions**
+- 1.0x slice size (normal)
+- Clean, minimal styling
+
+All effects activate during spinning and winner display for maximum visual impact.
+
 ## Configuration Options
 
 ### Settings Panel

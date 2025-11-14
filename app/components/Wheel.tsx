@@ -6,6 +6,151 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 
+// Color manipulation utilities
+const hexToRgb = (hex: string): {r: number, g: number, b: number} | null => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+};
+
+const rgbToHex = (r: number, g: number, b: number): string => {
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+};
+
+const lighten = (color: string, percent: number): string => {
+  const rgb = hexToRgb(color);
+  if (!rgb) return color;
+
+  const r = Math.min(255, Math.floor(rgb.r + (255 - rgb.r) * percent));
+  const g = Math.min(255, Math.floor(rgb.g + (255 - rgb.g) * percent));
+  const b = Math.min(255, Math.floor(rgb.b + (255 - rgb.b) * percent));
+
+  return rgbToHex(r, g, b);
+};
+
+const darken = (color: string, percent: number): string => {
+  const rgb = hexToRgb(color);
+  if (!rgb) return color;
+
+  const r = Math.floor(rgb.r * (1 - percent));
+  const g = Math.floor(rgb.g * (1 - percent));
+  const b = Math.floor(rgb.b * (1 - percent));
+
+  return rgbToHex(r, g, b);
+};
+
+// Tier detection based on compass position
+const getSliceTier = (centerAngle: number): 1 | 2 | 3 | 4 => {
+  const normalized = centerAngle % 360;
+  const tolerance = 0.1;
+
+  // Tier 1: North (0°/360°)
+  if (Math.abs(normalized) < tolerance || Math.abs(normalized - 360) < tolerance) {
+    return 1;
+  }
+
+  // Tier 2: Cardinals (E: 90°, S: 180°, W: 270°)
+  const cardinalAngles = [90, 180, 270];
+  for (const angle of cardinalAngles) {
+    if (Math.abs(normalized - angle) < tolerance) {
+      return 2;
+    }
+  }
+
+  // Tier 3: Intercardinals (NE: 45°, SE: 135°, SW: 225°, NW: 315°)
+  const intercardinalAngles = [45, 135, 225, 315];
+  for (const angle of intercardinalAngles) {
+    if (Math.abs(normalized - angle) < tolerance) {
+      return 3;
+    }
+  }
+
+  // Tier 4: All others
+  return 4;
+};
+
+// Tier visual configuration
+const getTierVisuals = (tier: 1 | 2 | 3 | 4) => {
+  switch (tier) {
+    case 1: // North - MAXIMUM IMPACT
+      return {
+        borderWidth: 6,
+        borderColors: ['#FFD700', '#FFF8DC'], // Gold + Light Gold
+        doubleBorder: true,
+        shadowBlur: 25,
+        shadowColor: '#FFD700',
+        glowIntensity: 1.0,
+        patternType: 'radial-rays' as const,
+        cornerMarker: 'star' as const,
+        textScale: 2.0,
+      };
+    case 2: // Cardinals - DRAMATIC
+      return {
+        borderWidth: 5,
+        borderColors: ['#C0C0C0', '#E8E8E8'], // Silver + Light Silver
+        doubleBorder: false,
+        shadowBlur: 20,
+        shadowColor: '#C0C0C0',
+        glowIntensity: 0.8,
+        patternType: 'diagonal-stripes' as const,
+        cornerMarker: 'circle' as const,
+        textScale: 1.6,
+      };
+    case 3: // Intercardinals - ENHANCED
+      return {
+        borderWidth: 4,
+        borderColors: ['#FFFFFF', '#F5F5F5'], // White
+        doubleBorder: false,
+        shadowBlur: 15,
+        shadowColor: '#FFFFFF',
+        glowIntensity: 0.6,
+        patternType: 'none' as const,
+        cornerMarker: 'none' as const,
+        textScale: 1.3,
+      };
+    case 4: // Others - STANDARD
+      return {
+        borderWidth: 3,
+        borderColors: ['#FFFFFF'],
+        doubleBorder: false,
+        shadowBlur: 10,
+        shadowColor: '#FFFFFF',
+        glowIntensity: 0.4,
+        patternType: 'none' as const,
+        cornerMarker: 'none' as const,
+        textScale: 1.0,
+      };
+  }
+};
+
+// Star drawing helper
+const drawStar = (
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  points: number,
+  outerRadius: number,
+  innerRadius: number
+) => {
+  const step = Math.PI / points;
+  ctx.beginPath();
+  for (let i = 0; i < 2 * points; i++) {
+    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+    const angle = i * step - Math.PI / 2;
+    const x = cx + radius * Math.cos(angle);
+    const y = cy + radius * Math.sin(angle);
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.closePath();
+};
+
 export function Wheel() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const {
@@ -41,30 +186,30 @@ export function Wheel() {
     return normalized;
   };
 
-  // Get size multiplier based on compass position
-  // North (0°/360°): 1.5x, Cardinal (90°, 180°, 270°): 1.2x, Intercardinal (45°, 135°, 225°, 315°): 1.1x
+  // Get size multiplier based on compass position - DRAMATIC SCALING
+  // North (0°/360°): 2.0x, Cardinal (90°, 180°, 270°): 1.6x, Intercardinal (45°, 135°, 225°, 315°): 1.3x
   const getSliceSizeMultiplier = (centerAngle: number): number => {
     const normalized = normalizeAngle(centerAngle);
     const tolerance = 0.1; // Small tolerance for floating point comparison
 
-    // Check North (0° or 360°)
+    // Check North (0° or 360°) - MAXIMUM IMPACT
     if (Math.abs(normalized) < tolerance || Math.abs(normalized - 360) < tolerance) {
-      return 1.5;
+      return 2.0;
     }
 
-    // Check cardinal directions (E: 90°, S: 180°, W: 270°)
+    // Check cardinal directions (E: 90°, S: 180°, W: 270°) - DRAMATIC
     const cardinalAngles = [90, 180, 270];
     for (const angle of cardinalAngles) {
       if (Math.abs(normalized - angle) < tolerance) {
-        return 1.2;
+        return 1.6;
       }
     }
 
-    // Check intercardinal directions (NE: 45°, SE: 135°, SW: 225°, NW: 315°)
+    // Check intercardinal directions (NE: 45°, SE: 135°, SW: 225°, NW: 315°) - ENHANCED
     const intercardinalAngles = [45, 135, 225, 315];
     for (const angle of intercardinalAngles) {
       if (Math.abs(normalized - angle) < tolerance) {
-        return 1.1;
+        return 1.3;
       }
     }
 
@@ -85,12 +230,14 @@ export function Wheel() {
       // Calculate where the center of this slice would be with equal distribution
       const centerAngle = index * baseAngle;
       const multiplier = getSliceSizeMultiplier(centerAngle);
+      const tier = getSliceTier(centerAngle);
 
       return {
         entry,
         index,
         centerAngle,
         multiplier,
+        tier,
         visualAngle: baseAngle * multiplier, // Visual angle (affects display)
         probabilityAngle: baseAngle, // Probability angle (always equal)
       };
@@ -344,9 +491,10 @@ export function Wheel() {
     // Get dynamic slice configurations
     const sliceConfigs = calculateSliceAngles();
 
-    // Draw segments with dynamic sizing
+    // Draw segments with DRAMATIC tier-based visual effects
     sliceConfigs.forEach((config, index) => {
       const entry = config.entry;
+      const tierVisuals = getTierVisuals(config.tier);
 
       // Convert degrees to radians and offset for pointer position at top
       const startAngle = (config.startAngle - 90) * (Math.PI / 180);
@@ -357,30 +505,83 @@ export function Wheel() {
       const isWinningSegment = highlightWinner && targetWinnerIds.includes(entry.id);
       const isDimmed = highlightWinner && !isWinningSegment;
 
-      // Draw segment
+      // Pulsing effect - only during spin or when highlighting winner
+      const shouldPulse = (isSpinning || highlightWinner) && isWinningSegment;
+      const pulseIntensity = shouldPulse ? 0.5 + 0.5 * Math.sin(Date.now() / 300) : 0;
+
+      // Draw segment base
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.arc(0, 0, radius, startAngle, endAngle);
       ctx.closePath();
 
-      // Gradient fill with dimming for non-winners
+      // DRAMATIC multi-stop gradient with lighten/darken
       const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
       if (isDimmed) {
         // Dim non-winning slices
         gradient.addColorStop(0, entry.color + '66');
         gradient.addColorStop(1, entry.color + '44');
       } else {
-        gradient.addColorStop(0, entry.color);
-        gradient.addColorStop(1, entry.color + 'DD');
+        // Multi-stop gradient for depth
+        const lightColor = lighten(entry.color, 0.3);
+        const darkColor = darken(entry.color, 0.2);
+        gradient.addColorStop(0, lightColor);
+        gradient.addColorStop(0.5, entry.color);
+        gradient.addColorStop(1, darkColor);
       }
 
       ctx.fillStyle = gradient;
       ctx.fill();
 
-      // Border - highlight winner with gold glow and pulse effect
-      if (isWinningSegment) {
+      // PATTERN OVERLAYS for Tier 1 & 2
+      if (!isDimmed && tierVisuals.patternType !== 'none') {
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+
+        if (tierVisuals.patternType === 'radial-rays') {
+          // Radial rays pattern for Tier 1
+          const numRays = 12;
+          const rayAngleStep = (endAngle - startAngle) / numRays;
+          for (let i = 0; i < numRays; i++) {
+            if (i % 2 === 0) continue; // Alternate rays
+            const rayStart = startAngle + i * rayAngleStep;
+            const rayEnd = rayStart + rayAngleStep;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.arc(0, 0, radius, rayStart, rayEnd);
+            ctx.closePath();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fill();
+          }
+        } else if (tierVisuals.patternType === 'diagonal-stripes') {
+          // Diagonal stripes pattern for Tier 2
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.arc(0, 0, radius, startAngle, endAngle);
+          ctx.closePath();
+          ctx.clip();
+
+          const stripeWidth = 15;
+          const numStripes = Math.ceil(radius * 2 / stripeWidth);
+          ctx.fillStyle = '#FFFFFF';
+          for (let i = -numStripes; i < numStripes; i++) {
+            ctx.fillRect(i * stripeWidth * 2, -radius, stripeWidth, radius * 2);
+          }
+        }
+
+        ctx.restore();
+      }
+
+      // ENHANCED BORDERS with tier-based styling
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, radius, startAngle, endAngle);
+      ctx.closePath();
+
+      // Border glow and shadow
+      if (isWinningSegment && shouldPulse) {
         // Pulsing glow effect for winner
-        const pulseIntensity = 0.5 + 0.5 * Math.sin(Date.now() / 300);
         ctx.shadowColor = '#FFD700';
         ctx.shadowBlur = 15 + 10 * pulseIntensity;
         ctx.strokeStyle = '#FFD700';
@@ -392,23 +593,74 @@ export function Wheel() {
         ctx.strokeStyle = '#ffffff44';
         ctx.lineWidth = 2;
       } else {
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
+        // Tier-based glow
+        ctx.shadowColor = tierVisuals.shadowColor;
+        ctx.shadowBlur = tierVisuals.shadowBlur * tierVisuals.glowIntensity;
+        ctx.strokeStyle = tierVisuals.borderColors[0];
+        ctx.lineWidth = tierVisuals.borderWidth;
       }
       ctx.stroke();
 
-      // Draw text - scale with slice size
+      // DOUBLE BORDER for Tier 1
+      if (!isDimmed && tierVisuals.doubleBorder && !isWinningSegment) {
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = tierVisuals.borderColors[1];
+        ctx.lineWidth = tierVisuals.borderWidth - 2;
+        ctx.stroke();
+      }
+
+      ctx.restore();
+
+      // CORNER MARKERS (stars for Tier 1, circles for Tier 2)
+      if (!isDimmed && tierVisuals.cornerMarker !== 'none') {
+        ctx.save();
+
+        // Calculate positions at the outer corners of the slice
+        const markerRadius = radius * 0.92;
+        const markerSize = 8;
+
+        // Start corner
+        const startX = markerRadius * Math.cos(startAngle);
+        const startY = markerRadius * Math.sin(startAngle);
+
+        // End corner
+        const endX = markerRadius * Math.cos(endAngle);
+        const endY = markerRadius * Math.sin(endAngle);
+
+        ctx.fillStyle = tierVisuals.borderColors[0];
+        ctx.shadowColor = tierVisuals.shadowColor;
+        ctx.shadowBlur = 8;
+
+        if (tierVisuals.cornerMarker === 'star') {
+          // Draw stars at corners for Tier 1
+          drawStar(ctx, startX, startY, 5, markerSize, markerSize * 0.4);
+          ctx.fill();
+          drawStar(ctx, endX, endY, 5, markerSize, markerSize * 0.4);
+          ctx.fill();
+        } else if (tierVisuals.cornerMarker === 'circle') {
+          // Draw circles at corners for Tier 2
+          ctx.beginPath();
+          ctx.arc(startX, startY, markerSize * 0.6, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(endX, endY, markerSize * 0.6, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+
+      // ENHANCED TEXT with NO CAPS on scaling
       ctx.save();
       ctx.rotate(centerAngle);
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
 
-      // Calculate text size based on slice size multiplier
+      // Calculate text size based on tier multiplier - NO CAPS!
       const baseFontSize = 18;
-      const fontSize = baseFontSize * Math.min(1.2, config.multiplier); // Cap at 1.2x for readability
+      const fontSize = baseFontSize * tierVisuals.textScale;
 
       // Make winning text larger and bolder
       if (isWinningSegment) {
