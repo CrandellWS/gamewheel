@@ -15,8 +15,8 @@ export function WelcomeModal({ onClose, onLoadSample }: WelcomeModalProps) {
   const steps = [
     {
       icon: <Zap className="w-12 h-12 text-indigo-600 dark:text-indigo-400" />,
-      title: 'Welcome to Wheel of Names! 🎡',
-      description: 'A free, open-source random name picker with powerful features.',
+      title: 'Welcome to GameWheel! 🎡',
+      description: 'A free, open-source random selection spinner with game modes and advanced features.',
       content: (
         <div className="space-y-3">
           <div className="flex items-start gap-3">
@@ -29,20 +29,20 @@ export function WelcomeModal({ onClose, onLoadSample }: WelcomeModalProps) {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">⚖️</div>
+            <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">🎮</div>
             <div>
-              <p className="font-semibold text-gray-900 dark:text-white">Weighted Probability</p>
+              <p className="font-semibold text-gray-900 dark:text-white">Multiple Game Modes</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Control odds with custom weights (1-10)
+                First Win or Last Remaining (elimination) modes
               </p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">💾</div>
+            <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">💬</div>
             <div>
-              <p className="font-semibold text-gray-900 dark:text-white">Auto-Save</p>
+              <p className="font-semibold text-gray-900 dark:text-white">Chat Integration</p>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Your data stays in your browser
+                Accept entries from Twitch, Discord, YouTube
               </p>
             </div>
           </div>

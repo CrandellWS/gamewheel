@@ -1,7 +1,7 @@
 {
-  "name": "wheel-of-names",
-  "version": "1.0.0",
-  "description": "An improved, open-source alternative to Wheel of Names with weighted probability, dark mode, and more",
+  "name": "gamewheel",
+  "version": "2.0.0",
+  "description": "GameWheel: A feature-rich random selection spinner with game modes, configurable terminology, chat integration, and more",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -32,18 +32,22 @@
     "typescript": "^5.3.3"
   },
   "keywords": [
+    "gamewheel",
     "wheel",
     "random",
     "picker",
-    "name-picker",
+    "game-modes",
+    "elimination",
     "decision-maker",
     "spinner",
+    "twitch-integration",
+    "chat-integration",
     "open-source"
   ],
-  "author": "AI Dev Workforce",
+  "author": "Bill Crandell <crandellws@users.noreply.github.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/wheel-of-names.git"
+    "url": "https://github.com/crandellws/gamewheel.git"
   }
 }

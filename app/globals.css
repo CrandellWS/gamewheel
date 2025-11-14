@@ -72,3 +72,47 @@ body {
 .animate-spin-ease {
   animation: spin-ease 3s ease-out;
 }
+
+/* Winner confirmation animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes winner-pulse {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  }
+  50% {
+    filter: brightness(1.2);
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.9);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-winner-pulse {
+  animation: winner-pulse 1.5s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}

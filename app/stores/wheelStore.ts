@@ -20,6 +20,68 @@ const selectWinner = (entries: Entry[]): Entry => {
   return entries[0];
 };
 
+// Get compass positions for multi-winner selection
+const getCompassPositions = (numberOfWinners: 1 | 3 | 4 | 8): number[] => {
+  // Positions are in degrees from North (0 degrees = top of wheel)
+  switch (numberOfWinners) {
+    case 1:
+      return [0]; // North only
+    case 3:
+      // North, East, South, West (actually 4 positions as per requirement)
+      return [0, 90, 180, 270];
+    case 4:
+      // 4 cardinal directions
+      return [0, 90, 180, 270];
+    case 8:
+      // All 8 compass positions
+      return [0, 45, 90, 135, 180, 225, 270, 315];
+    default:
+      return [0];
+  }
+};
+
+// Select winners at compass positions
+const selectMultipleWinners = (
+  entries: Entry[],
+  numberOfWinners: 1 | 3 | 4 | 8,
+  primaryWinnerId: string
+): Entry[] => {
+  if (entries.length === 0) return [];
+
+  const positions = getCompassPositions(numberOfWinners);
+
+  // Find the index of the primary winner
+  const primaryIndex = entries.findIndex(e => e.id === primaryWinnerId);
+  if (primaryIndex === -1) return [entries[0]];
+
+  const numEntries = entries.length;
+  const degreesPerSegment = 360 / numEntries;
+
+  const winners: Entry[] = [];
+  const winnerIds = new Set<string>();
+
+  // For each compass position, find the nearest entry
+  for (const compassAngle of positions) {
+    // Calculate which entry index is closest to this compass position
+    // The primary winner is at position 0 (North)
+    // Other entries are offset from the primary winner
+    const offsetDegrees = compassAngle;
+    const offsetSegments = Math.round(offsetDegrees / degreesPerSegment);
+    const winnerIndex = (primaryIndex + offsetSegments) % numEntries;
+
+    const winnerEntry = entries[winnerIndex];
+
+    // Only add if we haven't already selected this entry
+    // This can happen when there are fewer entries than winner slots
+    if (!winnerIds.has(winnerEntry.id)) {
+      winners.push(winnerEntry);
+      winnerIds.add(winnerEntry.id);
+    }
+  }
+
+  return winners;
+};
+
 export const useWheelStore = create<WheelStore>()(
   persist(
     (set, get) => ({
@@ -34,12 +96,28 @@ export const useWheelStore = create<WheelStore>()(
       history: [],
       isSpinning: false,
       winner: null,
+      winners: [],
       targetWinnerId: null,
+      targetWinnerIds: [],
+      isWaitingConfirmation: false,
       settings: {
         removeWinners: true,
         soundEnabled: true,
         spinDuration: 4000,
         confettiEnabled: true,
+        gameMode: 'first-win',
+        terminology: 'Contestants',
+        numberOfWinners: 1,
+        chatIntegration: {
+          enabled: false,
+          minimumFee: 1.0,
+          platforms: {
+            twitch: false,
+            discord: false,
+            youtube: false,
+          },
+          webhookUrl: '',
+        },
       },
 
       addEntry: (name: string, color?: string) => {
@@ -93,14 +171,30 @@ export const useWheelStore = create<WheelStore>()(
         const state = get();
         const activeEntries = state.entries.filter((e) => !e.removed);
 
-        if (activeEntries.length === 0 || state.isSpinning) {
+        // Prevent spinning if waiting for confirmation, already spinning, or no entries
+        if (activeEntries.length === 0 || state.isSpinning || state.isWaitingConfirmation) {
           return;
         }
 
-        // Select winner BEFORE spinning starts
-        const winner = selectWinner(activeEntries);
+        // Select primary winner BEFORE spinning starts
+        const primaryWinner = selectWinner(activeEntries);
+        const isLastRemainingMode = state.settings.gameMode === 'last-remaining';
 
-        set({ isSpinning: true, winner: null, targetWinnerId: winner.id });
+        // Select all winners based on compass positions
+        const allWinners = selectMultipleWinners(
+          activeEntries,
+          state.settings.numberOfWinners,
+          primaryWinner.id
+        );
+
+        set({
+          isSpinning: true,
+          winner: null,
+          winners: [],
+          targetWinnerId: primaryWinner.id,
+          targetWinnerIds: allWinners.map(w => w.id),
+          isWaitingConfirmation: false,
+        });
 
         // Capture spin duration at start to prevent timing desync if settings change
         const spinDuration = state.settings.spinDuration;
@@ -110,31 +204,49 @@ export const useWheelStore = create<WheelStore>()(
           setTimeout(resolve, spinDuration)
         );
 
+        const winnerNames = allWinners.map(w => w.name);
+
         set((state) => ({
           isSpinning: false,
-          winner: winner.name,
+          winner: primaryWinner.name,
+          winners: winnerNames,
+          isWaitingConfirmation: true,
           history: [
             {
               id: Date.now().toString(),
-              winner: winner.name,
+              winner: primaryWinner.name,
+              winners: winnerNames,
               timestamp: Date.now(),
+              isElimination: isLastRemainingMode,
+              gameMode: state.settings.gameMode,
+              numberOfWinners: state.settings.numberOfWinners,
             },
             ...state.history,
           ].slice(0, 50), // Keep last 50 results
-          // Don't auto-remove winner - let user decide
+          // Don't auto-remove winners - let user decide
         }));
       },
 
       confirmWinner: () => {
         set((state) => {
-          // CRITICAL FIX: Use targetWinnerId instead of name to handle duplicates
-          const winnerEntry = state.entries.find((e) => e.id === state.targetWinnerId);
+          const isLastRemainingMode = state.settings.gameMode === 'last-remaining';
+
+          // In last-remaining mode, always remove the selected entries (elimination)
+          // In first-win mode, respect the removeWinners setting
+          const shouldRemove = isLastRemainingMode || state.settings.removeWinners;
+
+          // Get all winner IDs to remove
+          const winnerIdsToRemove = new Set(state.targetWinnerIds);
+
           return {
             winner: null,
+            winners: [],
             targetWinnerId: null,
-            entries: state.settings.removeWinners && winnerEntry
+            targetWinnerIds: [],
+            isWaitingConfirmation: false,
+            entries: shouldRemove
               ? state.entries.map((e) =>
-                  e.id === winnerEntry.id ? { ...e, removed: true } : e
+                  winnerIdsToRemove.has(e.id) ? { ...e, removed: true } : e
                 )
               : state.entries,
           };
@@ -142,14 +254,23 @@ export const useWheelStore = create<WheelStore>()(
       },
 
       dismissWinner: () => {
-        set({ winner: null, targetWinnerId: null });
+        set({
+          winner: null,
+          winners: [],
+          targetWinnerId: null,
+          targetWinnerIds: [],
+          isWaitingConfirmation: false
+        });
       },
 
       resetWheel: () => {
         set((state) => ({
           entries: state.entries.map((e) => ({ ...e, removed: false })),
           winner: null,
+          winners: [],
           targetWinnerId: null,
+          targetWinnerIds: [],
+          isWaitingConfirmation: false,
         }));
       },
 
@@ -197,7 +318,7 @@ export const useWheelStore = create<WheelStore>()(
       },
     }),
     {
-      name: 'wheel-of-names-storage',
+      name: 'gamewheel-storage',
       partialize: (state) => ({
         entries: state.entries,
         history: state.history,

@@ -51,7 +51,7 @@ git add .
 git commit -m "Initial commit: Wheel of Names application"
 
 # Push to GitHub
-git remote add origin https://github.com/YOUR_USERNAME/wheel-of-names.git
+git remote add origin https://github.com/crandellws/gamewheel.git
 git branch -M main
 git push -u origin main
 ```
@@ -61,7 +61,7 @@ git push -u origin main
 1. Go to repository **Settings → Pages**
 2. Select **"GitHub Actions"** as source
 3. Push triggers auto-deployment
-4. Site live at: `https://YOUR_USERNAME.github.io/wheel-of-names/`
+4. Site live at: `https://crandellws.github.io/gamewheel/`
 
 ## WebStorm Run Configurations
 

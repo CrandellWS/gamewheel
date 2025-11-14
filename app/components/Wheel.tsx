@@ -8,7 +8,19 @@ import { useWindowSize } from 'react-use';
 
 export function Wheel() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { entries, isSpinning, spin, winner, targetWinnerId, settings, confirmWinner, dismissWinner } = useWheelStore();
+  const {
+    entries,
+    isSpinning,
+    spin,
+    winner,
+    winners,
+    targetWinnerId,
+    targetWinnerIds,
+    isWaitingConfirmation,
+    settings,
+    confirmWinner,
+    dismissWinner
+  } = useWheelStore();
   const { width, height } = useWindowSize();
 
   const [rotation, setRotation] = useState(0);
@@ -16,10 +28,99 @@ export function Wheel() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [highlightWinner, setHighlightWinner] = useState(false);
+  const [pulseFrame, setPulseFrame] = useState(0);
   const lastSegmentRef = useRef(-1);
 
   const activeEntries = entries.filter((e) => !e.removed);
-  const canSpin = activeEntries.length > 0 && !isSpinning;
+  const canSpin = activeEntries.length > 0 && !isSpinning && !isWaitingConfirmation;
+
+  // Helper function to normalize angles to 0-360 range
+  const normalizeAngle = (angle: number): number => {
+    let normalized = angle % 360;
+    if (normalized < 0) normalized += 360;
+    return normalized;
+  };
+
+  // Get size multiplier based on compass position
+  // North (0°/360°): 1.5x, Cardinal (90°, 180°, 270°): 1.2x, Intercardinal (45°, 135°, 225°, 315°): 1.1x
+  const getSliceSizeMultiplier = (centerAngle: number): number => {
+    const normalized = normalizeAngle(centerAngle);
+    const tolerance = 0.1; // Small tolerance for floating point comparison
+
+    // Check North (0° or 360°)
+    if (Math.abs(normalized) < tolerance || Math.abs(normalized - 360) < tolerance) {
+      return 1.5;
+    }
+
+    // Check cardinal directions (E: 90°, S: 180°, W: 270°)
+    const cardinalAngles = [90, 180, 270];
+    for (const angle of cardinalAngles) {
+      if (Math.abs(normalized - angle) < tolerance) {
+        return 1.2;
+      }
+    }
+
+    // Check intercardinal directions (NE: 45°, SE: 135°, SW: 225°, NW: 315°)
+    const intercardinalAngles = [45, 135, 225, 315];
+    for (const angle of intercardinalAngles) {
+      if (Math.abs(normalized - angle) < tolerance) {
+        return 1.1;
+      }
+    }
+
+    // Default size for all other positions
+    return 1.0;
+  };
+
+  // Calculate slice configurations with dynamic sizing
+  const calculateSliceAngles = () => {
+    const numSlices = activeEntries.length;
+    if (numSlices === 0) return [];
+
+    // Base angle for equal probability (each slice represents equal probability)
+    const baseAngle = 360 / numSlices;
+
+    // Calculate size multiplier for each slice based on its center position
+    const sliceConfigs = activeEntries.map((entry, index) => {
+      // Calculate where the center of this slice would be with equal distribution
+      const centerAngle = index * baseAngle;
+      const multiplier = getSliceSizeMultiplier(centerAngle);
+
+      return {
+        entry,
+        index,
+        centerAngle,
+        multiplier,
+        visualAngle: baseAngle * multiplier, // Visual angle (affects display)
+        probabilityAngle: baseAngle, // Probability angle (always equal)
+      };
+    });
+
+    // Calculate total visual angle and normalize
+    const totalVisualAngle = sliceConfigs.reduce((sum, config) => sum + config.visualAngle, 0);
+
+    // Normalize visual angles to fit 360 degrees
+    const normalizedConfigs = sliceConfigs.map(config => ({
+      ...config,
+      visualAngle: (config.visualAngle / totalVisualAngle) * 360,
+    }));
+
+    // Calculate cumulative angles for drawing
+    let cumulativeAngle = 0;
+    const finalConfigs = normalizedConfigs.map(config => {
+      const startAngle = cumulativeAngle;
+      const endAngle = startAngle + config.visualAngle;
+      cumulativeAngle = endAngle;
+
+      return {
+        ...config,
+        startAngle,
+        endAngle,
+      };
+    });
+
+    return finalConfigs;
+  };
 
   // Reusable AudioContext for better performance
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -109,10 +210,26 @@ export function Wheel() {
   // Play tick sound when crossing segment boundaries
   useEffect(() => {
     if (isAnimating && activeEntries.length > 0) {
-      const degreesPerSegment = 360 / activeEntries.length;
-      const currentSegment = Math.floor((rotation % 360) / degreesPerSegment);
+      const sliceConfigs = calculateSliceAngles();
+      const currentRotation = normalizeAngle(rotation);
 
-      if (currentSegment !== lastSegmentRef.current) {
+      // Find which slice the pointer is currently at
+      let currentSegment = -1;
+      for (let i = 0; i < sliceConfigs.length; i++) {
+        const config = sliceConfigs[i];
+        // Check if current rotation is within this slice's range
+        if (currentRotation >= config.startAngle && currentRotation < config.endAngle) {
+          currentSegment = i;
+          break;
+        }
+      }
+
+      // Handle wrap-around case (last slice to first slice)
+      if (currentSegment === -1 && sliceConfigs.length > 0) {
+        currentSegment = sliceConfigs.length - 1;
+      }
+
+      if (currentSegment !== lastSegmentRef.current && currentSegment !== -1) {
         playTickSound();
         lastSegmentRef.current = currentSegment;
       }
@@ -132,14 +249,17 @@ export function Wheel() {
         return;
       }
 
+      // Get slice configurations
+      const sliceConfigs = calculateSliceAngles();
+
+      // Find the center angle of the winning slice
+      const winnerConfig = sliceConfigs[targetWinnerIndex];
+      const winnerCenterAngle = winnerConfig.startAngle + winnerConfig.visualAngle / 2;
+
       // Calculate the angle to land on the winner
-      // Segments are drawn with centers at: i * degreesPerSegment - 90°
       // Pointer is at -90° (top of wheel)
-      // After rotation R, segment i center is at: (i * deg - 90°) - R
-      // To align with pointer: (i * deg - 90°) - R = -90°
-      // Therefore: R = i * degreesPerSegment (modulo 360)
-      const degreesPerSegment = 360 / numEntries;
-      const desiredFinalAngle = targetWinnerIndex * degreesPerSegment;
+      // We want the center of the winning slice to align with the pointer
+      const desiredFinalAngle = winnerCenterAngle;
 
       // Add 5-8 full rotations for dramatic effect (integer only)
       const spins = 5 + Math.random() * 3;
@@ -221,16 +341,21 @@ export function Wheel() {
     // CRITICAL: Negate rotation to match arc() clockwise convention with rotate() counter-clockwise
     ctx.rotate((-rotation * Math.PI) / 180);
 
-    // Draw segments
-    const anglePerSegment = (2 * Math.PI) / activeEntries.length;
+    // Get dynamic slice configurations
+    const sliceConfigs = calculateSliceAngles();
 
-    activeEntries.forEach((entry, index) => {
-      // Offset by half segment so segment centers align with pointer at top
-      const startAngle = index * anglePerSegment - Math.PI / 2 - anglePerSegment / 2;
-      const endAngle = startAngle + anglePerSegment;
-      // Calculate winner index from ID using current activeEntries
-      const targetWinnerIndex = targetWinnerId !== null ? activeEntries.findIndex(e => e.id === targetWinnerId) : -1;
-      const isWinningSegment = highlightWinner && index === targetWinnerIndex;
+    // Draw segments with dynamic sizing
+    sliceConfigs.forEach((config, index) => {
+      const entry = config.entry;
+
+      // Convert degrees to radians and offset for pointer position at top
+      const startAngle = (config.startAngle - 90) * (Math.PI / 180);
+      const endAngle = (config.endAngle - 90) * (Math.PI / 180);
+      const centerAngle = (startAngle + endAngle) / 2;
+
+      // Check if this entry is one of the winners
+      const isWinningSegment = highlightWinner && targetWinnerIds.includes(entry.id);
+      const isDimmed = highlightWinner && !isWinningSegment;
 
       // Draw segment
       ctx.beginPath();
@@ -238,21 +363,34 @@ export function Wheel() {
       ctx.arc(0, 0, radius, startAngle, endAngle);
       ctx.closePath();
 
-      // Gradient fill
+      // Gradient fill with dimming for non-winners
       const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-      gradient.addColorStop(0, entry.color);
-      gradient.addColorStop(1, entry.color + 'DD');
+      if (isDimmed) {
+        // Dim non-winning slices
+        gradient.addColorStop(0, entry.color + '66');
+        gradient.addColorStop(1, entry.color + '44');
+      } else {
+        gradient.addColorStop(0, entry.color);
+        gradient.addColorStop(1, entry.color + 'DD');
+      }
 
       ctx.fillStyle = gradient;
       ctx.fill();
 
-      // Border - highlight winner with gold glow
+      // Border - highlight winner with gold glow and pulse effect
       if (isWinningSegment) {
-        // Add glow effect for winner
+        // Pulsing glow effect for winner
+        const pulseIntensity = 0.5 + 0.5 * Math.sin(Date.now() / 300);
         ctx.shadowColor = '#FFD700';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = 15 + 10 * pulseIntensity;
         ctx.strokeStyle = '#FFD700';
-        ctx.lineWidth = 6;
+        ctx.lineWidth = 5 + 2 * pulseIntensity;
+      } else if (isDimmed) {
+        // Subtle border for dimmed slices
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#ffffff44';
+        ctx.lineWidth = 2;
       } else {
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
@@ -261,20 +399,24 @@ export function Wheel() {
       }
       ctx.stroke();
 
-      // Draw text
+      // Draw text - scale with slice size
       ctx.save();
-      ctx.rotate(startAngle + anglePerSegment / 2);
+      ctx.rotate(centerAngle);
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#ffffff';
 
+      // Calculate text size based on slice size multiplier
+      const baseFontSize = 18;
+      const fontSize = baseFontSize * Math.min(1.2, config.multiplier); // Cap at 1.2x for readability
+
       // Make winning text larger and bolder
       if (isWinningSegment) {
-        ctx.font = 'bold 22px Inter, sans-serif';
+        ctx.font = `bold ${fontSize + 4}px Inter, sans-serif`;
         ctx.shadowColor = '#000000';
         ctx.shadowBlur = 8;
       } else {
-        ctx.font = 'bold 18px Inter, sans-serif';
+        ctx.font = `bold ${fontSize}px Inter, sans-serif`;
         ctx.shadowColor = 'rgba(0,0,0,0.5)';
         ctx.shadowBlur = 4;
       }
@@ -336,7 +478,21 @@ export function Wheel() {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 4;
     ctx.stroke();
-  }, [activeEntries, rotation, highlightWinner, targetWinnerId]);
+  }, [activeEntries, rotation, highlightWinner, targetWinnerId, targetWinnerIds, pulseFrame]);
+
+  // Continuous animation for pulsing winner effect
+  useEffect(() => {
+    if (!highlightWinner) return;
+
+    let frameId: number;
+    const animate = () => {
+      setPulseFrame(prev => prev + 1);
+      frameId = requestAnimationFrame(animate);
+    };
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [highlightWinner]);
 
   const handleSpin = useCallback(() => {
     if (canSpin) {
@@ -380,6 +536,20 @@ export function Wheel() {
           gravity={0.3}
         />
       )}
+
+      {/* Dim overlay when waiting for confirmation */}
+      <AnimatePresence>
+        {isWaitingConfirmation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-10 pointer-events-none"
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
+
       <div className="relative w-full max-w-[500px] aspect-square" aria-busy={isSpinning}>
         <canvas
           ref={canvasRef}
@@ -419,67 +589,113 @@ export function Wheel() {
       </div>
 
       <AnimatePresence>
-        {winner && !isSpinning && (
+        {winner && !isSpinning && isWaitingConfirmation && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.8 }}
             transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            className="mt-8 p-8 bg-gradient-to-r from-yellow-100 via-amber-100 to-yellow-100
-                     dark:from-yellow-900 dark:via-amber-900 dark:to-yellow-900
-                     rounded-2xl text-center shadow-2xl border-4 border-yellow-400
-                     dark:border-yellow-600 relative overflow-hidden max-w-lg w-full"
+            className="mt-8 p-6 sm:p-8 bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50
+                     dark:from-yellow-900 dark:via-amber-900 dark:to-orange-900
+                     rounded-3xl text-center shadow-2xl border-4 border-yellow-400
+                     dark:border-yellow-600 relative overflow-hidden max-w-2xl w-full
+                     animate-pulse-glow z-20"
           >
             {/* Animated background shine */}
             <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-20"
-              animate={{ x: ['-100%', '100%'] }}
-              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"
+              style={{ width: '200%' }}
             />
 
-            <motion.p
+            {/* Trophy icon for celebration */}
+            <motion.div
               initial={{ scale: 0, rotate: -180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="text-7xl mb-3"
+              className="text-7xl sm:text-8xl mb-4"
             >
-              🎉
-            </motion.p>
+              {winners.length > 1 ? '🏆' : '🎉'}
+            </motion.div>
 
             <motion.div
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 1, repeat: Infinity, repeatDelay: 0.5 }}
             >
-              <p className="text-lg font-bold text-yellow-800 dark:text-yellow-200 mb-2 tracking-wider">
-                ✨ WINNER ✨
+              <p className="text-xl sm:text-2xl font-bold text-yellow-800 dark:text-yellow-200 mb-4 tracking-wider uppercase">
+                {winners.length > 1 ? '✨ WINNERS SELECTED ✨' : '✨ WINNER SELECTED ✨'}
               </p>
-              <p className="text-4xl sm:text-5xl font-extrabold text-yellow-900 dark:text-yellow-100
-                          drop-shadow-lg px-4 py-2 relative z-10 mb-6">
-                {winner}
-              </p>
+
+              {winners.length > 1 ? (
+                <div className="space-y-3 mb-6 relative z-10 max-h-64 overflow-y-auto px-2">
+                  {winners.map((winnerName, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * index }}
+                      className="bg-white/50 dark:bg-black/30 rounded-lg p-3 backdrop-blur-sm"
+                    >
+                      <p className="text-2xl sm:text-3xl font-extrabold text-yellow-900 dark:text-yellow-100
+                                  drop-shadow-lg break-words">
+                        {index === 0 && '⭐ '}
+                        <span className="animate-winner-pulse">{winnerName}</span>
+                      </p>
+                    </motion.div>
+                  ))}
+                  <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-300 mt-3 bg-yellow-200/50 dark:bg-yellow-800/50 rounded-full px-4 py-2 inline-block">
+                    {winners.length} winner{winners.length > 1 ? 's' : ''} selected
+                  </p>
+                </div>
+              ) : (
+                <div className="mb-6 relative z-10">
+                  <div className="bg-white/50 dark:bg-black/30 rounded-xl p-6 backdrop-blur-sm">
+                    <p className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-yellow-900 dark:text-yellow-100
+                                drop-shadow-2xl break-words animate-winner-pulse">
+                      {winner}
+                    </p>
+                  </div>
+                </div>
+              )}
             </motion.div>
 
-            {/* Action buttons */}
-            <div className="flex gap-3 justify-center relative z-10">
+            {/* Prominent confirmation message */}
+            <div className="mb-6 relative z-10">
+              <p className="text-base sm:text-lg font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+                Please confirm to continue
+              </p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                {settings.removeWinners
+                  ? `Winner${winners.length > 1 ? 's' : ''} will be removed from the wheel`
+                  : `Winner${winners.length > 1 ? 's' : ''} will remain in the wheel`
+                }
+              </p>
+            </div>
+
+            {/* Action buttons - larger and more prominent */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center relative z-10">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={confirmWinner}
-                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold
-                         rounded-lg shadow-lg transition-colors duration-200
-                         focus:outline-none focus:ring-4 focus:ring-green-300"
-                aria-label="Confirm winner and continue"
+                className="px-8 py-4 bg-gradient-to-r from-green-600 to-green-700
+                         hover:from-green-700 hover:to-green-800 text-white font-bold text-lg
+                         rounded-xl shadow-2xl transition-all duration-200
+                         focus:outline-none focus:ring-4 focus:ring-green-300
+                         border-2 border-green-400"
+                aria-label={`Confirm ${winners.length > 1 ? 'winners' : 'winner'} and continue`}
               >
-                ✓ Confirm {settings.removeWinners ? '& Remove' : ''}
+                ✓ Confirm Winner{winners.length > 1 ? 's' : ''}
               </motion.button>
 
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={dismissWinner}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold
-                         rounded-lg shadow-lg transition-colors duration-200
-                         focus:outline-none focus:ring-4 focus:ring-blue-300"
+                className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700
+                         hover:from-blue-700 hover:to-blue-800 text-white font-bold text-lg
+                         rounded-xl shadow-2xl transition-all duration-200
+                         focus:outline-none focus:ring-4 focus:ring-blue-300
+                         border-2 border-blue-400"
                 aria-label="Spin again without removing"
               >
                 🔄 Spin Again

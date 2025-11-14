@@ -472,7 +472,7 @@ Before committing to GitHub:
 - [ ] Linting passes
 - [ ] No sensitive data in code
 - [ ] .gitignore includes node_modules, .next, out
-- [ ] GitHub URLs updated (replace "yourusername")
+- [ ] GitHub URLs updated (using "crandellws")
 
 ---
 
@@ -482,7 +482,7 @@ After pushing to GitHub and deploying:
 
 - [ ] GitHub Actions workflow runs successfully
 - [ ] Site deploys to GitHub Pages
-- [ ] Visit live URL: `https://yourusername.github.io/wheel-of-names/`
+- [ ] Visit live URL: `https://crandellws.github.io/gamewheel/`
 - [ ] Test core features on live site
 - [ ] Verify assets load correctly
 - [ ] Test on mobile device (real device if possible)

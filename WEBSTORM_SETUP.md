@@ -262,7 +262,7 @@ git commit -m "Initial commit: Complete Wheel of Names application"
 1. Create repository on GitHub (without initializing with README)
 2. In WebStorm terminal:
 ```bash
-git remote add origin https://github.com/yourusername/wheel-of-names.git
+git remote add origin https://github.com/crandellws/gamewheel.git
 git branch -M main
 git push -u origin main
 ```

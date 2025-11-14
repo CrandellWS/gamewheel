@@ -20,12 +20,12 @@ export default function Home() {
 
   // Check if first visit
   useEffect(() => {
-    const hasVisited = localStorage.getItem('wheel-of-names-visited');
+    const hasVisited = localStorage.getItem('gamewheel-visited');
     const hasEntries = entries.length > 0;
 
     if (!hasVisited && !hasEntries) {
       setShowWelcome(true);
-      localStorage.setItem('wheel-of-names-visited', 'true');
+      localStorage.setItem('gamewheel-visited', 'true');
     }
   }, [entries.length]);
 
@@ -120,7 +120,7 @@ export default function Home() {
             <div className="text-4xl">🎡</div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Wheel of Names
+                GameWheel
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Open Source • Free Forever
@@ -139,7 +139,7 @@ export default function Home() {
             </button>
 
             <a
-              href="https://github.com/yourusername/wheel-of-names"
+              href="https://github.com/crandellws/gamewheel"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
@@ -206,12 +206,23 @@ export default function Home() {
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg border
                        border-gray-200 dark:border-gray-700">
-            <div className="text-3xl mb-3">⚖️</div>
+            <div className="text-3xl mb-3">🎮</div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              Weighted Probability
+              Game Modes
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Adjust weights for each entry to control selection probability
+              First Win or Last Remaining elimination mode for competitive gameplay
+            </p>
+          </div>
+
+          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg border
+                       border-gray-200 dark:border-gray-700">
+            <div className="text-3xl mb-3">💬</div>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Chat Integration
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              Accept entries from Twitch, Discord, and YouTube via webhooks
             </p>
           </div>
 
@@ -219,21 +230,10 @@ export default function Home() {
                        border-gray-200 dark:border-gray-700">
             <div className="text-3xl mb-3">🎨</div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              Full Customization
+              Fully Customizable
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Custom colors, spin duration, and dark mode support
-            </p>
-          </div>
-
-          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg border
-                       border-gray-200 dark:border-gray-700">
-            <div className="text-3xl mb-3">🔓</div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-              Open Source
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Free forever, no ads, no tracking. Your data stays private.
+              Custom terminology, colors, weights, and dark mode support
             </p>
           </div>
         </div>
@@ -244,9 +244,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 text-center text-sm text-gray-600
                       dark:text-gray-400">
           <p>
-            Made with ❤️ by AI Dev Workforce •{' '}
+            Made with ❤️ by Bill Crandell •{' '}
             <a
-              href="https://github.com/yourusername/wheel-of-names"
+              href="https://github.com/crandellws/gamewheel"
               className="text-indigo-600 dark:text-indigo-400 hover:underline"
               target="_blank"
               rel="noopener noreferrer"

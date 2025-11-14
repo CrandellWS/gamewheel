@@ -23,9 +23,15 @@ export function HistoryPanel() {
 
   const exportHistory = () => {
     const csv = [
-      'Winner,Timestamp,Date',
+      'Winner,Type,Game Mode,Timestamp,Date',
       ...history.map((h) =>
-        [h.winner, h.timestamp, new Date(h.timestamp).toISOString()].join(',')
+        [
+          h.winner,
+          h.isElimination ? 'Elimination' : 'Win',
+          h.gameMode || 'first-win',
+          h.timestamp,
+          new Date(h.timestamp).toISOString(),
+        ].join(',')
       ),
     ].join('\n');
 
@@ -33,7 +39,7 @@ export function HistoryPanel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `wheel-history-${Date.now()}.csv`;
+    a.download = `gamewheel-history-${Date.now()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success(`Exported ${history.length} results to CSV`);
@@ -87,11 +93,14 @@ export function HistoryPanel() {
             >
               <div className="flex items-center gap-3">
                 <div
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500
-                           to-purple-600 flex items-center justify-center text-white
-                           font-bold text-sm shadow-md"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center
+                           text-white font-bold text-sm shadow-md ${
+                    result.isElimination
+                      ? 'bg-gradient-to-br from-red-500 to-orange-600'
+                      : 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                  }`}
                 >
-                  {index + 1}
+                  {result.isElimination ? '❌' : index + 1}
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">
@@ -102,12 +111,20 @@ export function HistoryPanel() {
                   </p>
                 </div>
               </div>
-              {index === 0 && (
-                <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800
-                               dark:text-green-200 text-xs font-semibold rounded-full">
-                  Latest
-                </span>
-              )}
+              <div className="flex gap-2">
+                {result.isElimination && (
+                  <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800
+                                 dark:text-red-200 text-xs font-semibold rounded-full">
+                    Eliminated
+                  </span>
+                )}
+                {index === 0 && (
+                  <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800
+                                 dark:text-green-200 text-xs font-semibold rounded-full">
+                    Latest
+                  </span>
+                )}
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>

@@ -1,7 +1,7 @@
 {
-  "name": "Wheel of Names - Random Name Picker",
-  "short_name": "Wheel of Names",
-  "description": "An improved, open-source alternative to Wheel of Names. Free random name picker with weighted probability, dark mode, and more features.",
+  "name": "GameWheel - Random Selection Spinner",
+  "short_name": "GameWheel",
+  "description": "GameWheel: Advanced random selection spinner with game modes, chat integration, configurable terminology, and more features.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -6,10 +6,27 @@ export interface Entry {
   removed: boolean;
 }
 
+export type GameMode = 'first-win' | 'last-remaining';
+
 export interface SpinResult {
   id: string;
   winner: string;
+  winners?: string[];
   timestamp: number;
+  isElimination?: boolean;
+  gameMode?: GameMode;
+  numberOfWinners?: number;
+}
+
+export interface ChatIntegrationSettings {
+  enabled: boolean;
+  minimumFee: number;
+  platforms: {
+    twitch: boolean;
+    discord: boolean;
+    youtube: boolean;
+  };
+  webhookUrl: string;
 }
 
 export interface WheelSettings {
@@ -17,6 +34,10 @@ export interface WheelSettings {
   soundEnabled: boolean;
   spinDuration: number;
   confettiEnabled: boolean;
+  gameMode: GameMode;
+  terminology: string;
+  numberOfWinners: 1 | 3 | 4 | 8;
+  chatIntegration: ChatIntegrationSettings;
 }
 
 export interface WheelStore {
@@ -24,7 +45,10 @@ export interface WheelStore {
   history: SpinResult[];
   isSpinning: boolean;
   winner: string | null;
+  winners: string[];
   targetWinnerId: string | null;
+  targetWinnerIds: string[];
+  isWaitingConfirmation: boolean;
   settings: WheelSettings;
 
   // Entry management

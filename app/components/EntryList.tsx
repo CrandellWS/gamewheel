@@ -8,7 +8,7 @@ import { BulkAddModal } from './BulkAddModal';
 import toast from 'react-hot-toast';
 
 export function EntryList() {
-  const { entries, addEntry, removeEntry, updateEntry, resetWheel } =
+  const { entries, addEntry, removeEntry, updateEntry, resetWheel, settings } =
     useWheelStore();
 
   const [newEntryName, setNewEntryName] = useState('');
@@ -73,7 +73,7 @@ export function EntryList() {
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          Entries ({activeEntries.length})
+          {settings.terminology} ({activeEntries.length})
         </h2>
         {removedEntries.length > 0 && (
           <button
@@ -231,7 +231,7 @@ export function EntryList() {
 
         {activeEntries.length === 0 && (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <p>No entries yet. Add some above!</p>
+            <p>No {settings.terminology.toLowerCase()} yet. Add some above!</p>
           </div>
         )}
       </div>
