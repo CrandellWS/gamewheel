@@ -864,7 +864,7 @@ export function Settings({ onClose }: SettingsProps) {
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-500 text-center mt-1">
               <a
-                href="https://github.com/crandellws/gamewheel"
+                href="https://github.com/CrandellWS/gamewheel"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-indigo-600 dark:text-indigo-400 hover:underline"

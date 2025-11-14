@@ -75,7 +75,7 @@ GameWheel is a powerful, open-source random selection spinner with multiple game
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/crandellws/gamewheel.git
+git clone https://github.com/CrandellWS/gamewheel.git
 cd gamewheel
 ```
 
@@ -352,7 +352,7 @@ GameWheel is pre-configured for GitHub Pages deployment with automated builds.
    - Check the "Actions" tab to monitor deployment progress
 
 4. **Access Your Site**
-   - Your site will be available at: `https://crandellws.github.io/gamewheel/`
+   - Your site will be available at: `https://CrandellWS.github.io/gamewheel/`
    - Wait 2-3 minutes for the first deployment to complete
 
 #### Important Notes for GitHub Pages

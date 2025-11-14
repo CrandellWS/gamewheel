@@ -110,7 +110,7 @@ git push origin main
 
 Your site will be available at:
 ```
-https://crandellws.github.io/gamewheel/
+https://CrandellWS.github.io/gamewheel/
 ```
 
 ### Configuration Details
@@ -139,7 +139,7 @@ To use a custom domain like `gamewheel.yourdomain.com`:
    ```
 
 2. Update your DNS settings:
-   - Add a CNAME record pointing to `crandellws.github.io`
+   - Add a CNAME record pointing to `CrandellWS.github.io`
 
 3. In GitHub Settings > Pages:
    - Enter your custom domain

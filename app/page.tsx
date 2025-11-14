@@ -139,7 +139,7 @@ export default function Home() {
             </button>
 
             <a
-              href="https://github.com/crandellws/gamewheel"
+              href="https://github.com/CrandellWS/gamewheel"
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700
@@ -246,7 +246,7 @@ export default function Home() {
           <p>
             Made with ❤️ by Bill Crandell •{' '}
             <a
-              href="https://github.com/crandellws/gamewheel"
+              href="https://github.com/CrandellWS/gamewheel"
               className="text-indigo-600 dark:text-indigo-400 hover:underline"
               target="_blank"
               rel="noopener noreferrer"

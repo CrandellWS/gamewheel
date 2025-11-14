@@ -6,7 +6,7 @@ Get up and running with GameWheel in minutes!
 
 ```bash
 # Clone the repository
-git clone https://github.com/crandellws/gamewheel.git
+git clone https://github.com/CrandellWS/gamewheel.git
 cd gamewheel
 
 # Install dependencies
@@ -241,7 +241,7 @@ git push origin main
 # Go to: Settings → Pages → Source: "GitHub Actions"
 
 # 3. Wait for deployment (2-3 minutes)
-# Your site: https://crandellws.github.io/gamewheel/
+# Your site: https://CrandellWS.github.io/gamewheel/
 ```
 
 **What works on GitHub Pages:**

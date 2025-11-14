@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 // Determine the base URL based on environment
 const baseUrl = process.env.NODE_ENV === 'production'
-  ? 'https://crandellws.github.io/gamewheel'
+  ? 'https://CrandellWS.github.io/gamewheel'
   : 'http://localhost:3000'
 
 export const metadata: Metadata = {
