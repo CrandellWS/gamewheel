@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas Arc Direction Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        canvas { border: 2px solid black; margin: 20px; }
+        .result { background: #ffe; padding: 15px; margin: 20px 0; border-left: 4px solid #ee0; }
+    </style>
+</head>
+<body>
+    <h1>Canvas Arc Direction Test</h1>
+    <p>Testing: Does ctx.arc() draw clockwise or counter-clockwise?</p>
+
+    <canvas id="test" width="400" height="400"></canvas>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        const canvas = document.getElementById('test');
+        const ctx = canvas.getContext('2d');
+
+        const centerX = 200;
+        const centerY = 200;
+        const radius = 150;
+
+        // Draw coordinate axes
+        ctx.strokeStyle = '#ccc';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX, 400);
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(400, centerY);
+        ctx.stroke();
+
+        // Label directions
+        ctx.fillStyle = '#999';
+        ctx.font = '14px Arial';
+        ctx.fillText('0° →', 360, centerY - 10);
+        ctx.fillText('90° ↓', centerX + 10, 380);
+        ctx.fillText('180° ←', 10, centerY - 10);
+        ctx.fillText('-90° ↑', centerX + 10, 30);
+
+        // Draw a test arc from -90° to 30°
+        // In RADIANS: -π/2 to π/6
+        const startAngle = -Math.PI / 2; // -90° (UP)
+        const endAngle = Math.PI / 6;     // 30° (upper right)
+
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+        ctx.closePath();
+
+        ctx.fillStyle = 'rgba(255, 100, 100, 0.5)';
+        ctx.fill();
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Mark start and end points
+        ctx.fillStyle = 'blue';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - radius, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillText('START (-90°)', centerX + 10, centerY - radius);
+
+        ctx.fillStyle = 'green';
+        ctx.beginPath();
+        const endX = centerX + radius * Math.cos(endAngle);
+        const endY = centerY + radius * Math.sin(endAngle);
+        ctx.arc(endX, endY, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillText('END (30°)', endX + 10, endY);
+
+        // Explain the result
+        document.getElementById('result').innerHTML = `
+            <h2>Result:</h2>
+            <p><strong>The red sector shows the arc from -90° to 30°.</strong></p>
+            <p>Start point (blue): -90° (TOP of circle)</p>
+            <p>End point (green): 30° (upper-right)</p>
+            <p><strong>Direction: The arc goes CLOCKWISE from start to end.</strong></p>
+            <p>Conclusion: ctx.arc(cx, cy, r, start, end, false) draws CLOCKWISE.</p>
+            <p>In canvas, angles increase in the CLOCKWISE direction!</p>
+            <p><strong>This is OPPOSITE to mathematical convention where angles increase counter-clockwise.</strong></p>
+        `;
+    </script>
+</body>
+</html>

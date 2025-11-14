@@ -1,0 +1,40 @@
+{
+  "name": "Wheel of Names - Random Name Picker",
+  "short_name": "Wheel of Names",
+  "description": "An improved, open-source alternative to Wheel of Names. Free random name picker with weighted probability, dark mode, and more features.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["utilities", "productivity", "entertainment"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Spin the Wheel",
+      "short_name": "Spin",
+      "description": "Spin the wheel to pick a random winner",
+      "url": "/",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

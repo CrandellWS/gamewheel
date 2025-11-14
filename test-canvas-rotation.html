@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas Rotation Direction Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        canvas {
+            border: 2px solid black;
+            margin: 20px 0;
+        }
+        .explanation {
+            max-width: 800px;
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Canvas Rotation Direction Test</h1>
+
+    <div class="explanation">
+        <h2>Test Setup:</h2>
+        <p>This test draws a red line from center pointing RIGHT (0°), then applies rotation.</p>
+        <p><strong>Key Question:</strong> Does positive rotation go clockwise or counter-clockwise?</p>
+    </div>
+
+    <h2>1. No Rotation (baseline)</h2>
+    <canvas id="canvas0" width="300" height="300"></canvas>
+
+    <h2>2. Rotation: +45° (ctx.rotate(Math.PI/4))</h2>
+    <canvas id="canvas1" width="300" height="300"></canvas>
+
+    <h2>3. Rotation: -45° (ctx.rotate(-Math.PI/4))</h2>
+    <canvas id="canvas2" width="300" height="300"></canvas>
+
+    <h2>4. Rotation: +90° (ctx.rotate(Math.PI/2))</h2>
+    <canvas id="canvas3" width="300" height="300"></canvas>
+
+    <h2>5. Rotation: -90° (ctx.rotate(-Math.PI/2))</h2>
+    <canvas id="canvas4" width="300" height="300"></canvas>
+
+    <div class="explanation">
+        <h2>Analysis:</h2>
+        <p id="analysis"></p>
+    </div>
+
+    <script>
+        function drawArrow(ctx, rotation, label) {
+            ctx.clearRect(0, 0, 300, 300);
+
+            // Draw coordinate system
+            ctx.save();
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+
+            // Draw axes
+            ctx.beginPath();
+            ctx.moveTo(150, 0);
+            ctx.lineTo(150, 300);
+            ctx.moveTo(0, 150);
+            ctx.lineTo(300, 150);
+            ctx.stroke();
+
+            // Label axes
+            ctx.fillStyle = '#999';
+            ctx.font = '12px Arial';
+            ctx.fillText('0° →', 260, 145);
+            ctx.fillText('↓ 90°', 155, 290);
+            ctx.fillText('180° ←', 5, 145);
+            ctx.fillText('↑ -90°/270°', 90, 20);
+
+            ctx.restore();
+
+            // Move to center and rotate
+            ctx.save();
+            ctx.translate(150, 150);
+
+            if (rotation !== 0) {
+                ctx.rotate(rotation);
+            }
+
+            // Draw the arrow pointing RIGHT (0°) in the rotated coordinate system
+            ctx.strokeStyle = 'red';
+            ctx.fillStyle = 'red';
+            ctx.lineWidth = 3;
+
+            // Arrow line
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(100, 0);
+            ctx.stroke();
+
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(100, 0);
+            ctx.lineTo(90, -10);
+            ctx.lineTo(90, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            // Label
+            ctx.fillStyle = 'blue';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText(label, 50, -15);
+
+            ctx.restore();
+
+            // Draw center dot
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(150, 150, 5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        // Draw all test cases
+        drawArrow(document.getElementById('canvas0').getContext('2d'), 0, '0° (baseline)');
+        drawArrow(document.getElementById('canvas1').getContext('2d'), Math.PI/4, '+45°');
+        drawArrow(document.getElementById('canvas2').getContext('2d'), -Math.PI/4, '-45°');
+        drawArrow(document.getElementById('canvas3').getContext('2d'), Math.PI/2, '+90°');
+        drawArrow(document.getElementById('canvas4').getContext('2d'), -Math.PI/2, '-90°');
+
+        // Analysis
+        document.getElementById('analysis').innerHTML = `
+            <strong>Observation:</strong><br>
+            • Baseline: Arrow points RIGHT (0°, East)<br>
+            • +45°: Arrow rotates COUNTER-CLOCKWISE to top-right<br>
+            • -45°: Arrow rotates CLOCKWISE to bottom-right<br>
+            • +90°: Arrow points UP (-90° in standard coordinates)<br>
+            • -90°: Arrow points DOWN (90° in standard coordinates)<br>
+            <br>
+            <strong>Conclusion:</strong><br>
+            In HTML5 Canvas, <code>ctx.rotate(positive_angle)</code> rotates the coordinate system <strong>COUNTER-CLOCKWISE</strong>.<br>
+            When you rotate the canvas by R degrees and draw at angle θ, it appears at angle <strong>θ + R</strong> to the viewer.
+        `;
+    </script>
+</body>
+</html>

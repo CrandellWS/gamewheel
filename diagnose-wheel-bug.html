@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wheel Rotation Bug Diagnosis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            gap: 40px;
+            margin: 20px 0;
+        }
+        canvas {
+            border: 2px solid black;
+        }
+        .info {
+            max-width: 400px;
+        }
+        .bug {
+            background: #fee;
+            border-left: 4px solid #c00;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .fix {
+            background: #efe;
+            border-left: 4px solid #0c0;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wheel Rotation Bug Diagnosis</h1>
+
+    <div class="container">
+        <div>
+            <h2>CURRENT (BUGGY) Implementation</h2>
+            <canvas id="canvasBuggy" width="400" height="400"></canvas>
+            <div class="info">
+                <h3>Code:</h3>
+                <pre>ctx.rotate((rotation * Math.PI) / 180);</pre>
+                <p><strong>Trying to win segment 1 (David)</strong></p>
+                <p>Rotation needed: -60°</p>
+                <p>Problem: Segments rotate in OPPOSITE direction!</p>
+            </div>
+        </div>
+
+        <div>
+            <h2>FIXED Implementation</h2>
+            <canvas id="canvasFixed" width="400" height="400"></canvas>
+            <div class="info">
+                <h3>Code:</h3>
+                <pre>ctx.rotate((-rotation * Math.PI) / 180);</pre>
+                <p><strong>Trying to win segment 1 (David)</strong></p>
+                <p>Rotation needed: -60°</p>
+                <p>Result: David lands at pointer! ✓</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bug">
+        <h2>THE BUG:</h2>
+        <p><strong>Mathematical calculation:</strong> Correct ✓ (all segments land at -90°)</p>
+        <p><strong>Canvas rotation:</strong> Applied in wrong direction! ✗</p>
+        <p>
+            When we calculate rotation = -60° (to move David to the top), we want the wheel to rotate CLOCKWISE by 60°.<br>
+            But <code>ctx.rotate(-60° in radians)</code> rotates the canvas coordinate system CLOCKWISE,<br>
+            which makes shapes drawn at positive angles appear to rotate COUNTER-CLOCKWISE to the viewer!
+        </p>
+        <p><strong>Root cause:</strong> We're rotating the CANVAS COORDINATE SYSTEM, not the visual elements.</p>
+    </div>
+
+    <div class="fix">
+        <h2>THE FIX:</h2>
+        <p>Line 217 in Wheel.tsx:</p>
+        <p>Change: <code>ctx.rotate((rotation * Math.PI) / 180);</code></p>
+        <p>To: <code>ctx.rotate((-rotation * Math.PI) / 180);</code></p>
+        <p>(Add a negative sign to flip the direction)</p>
+    </div>
+
+    <script>
+        const entries = [
+            { name: 'Charlie', color: '#FF6B6B' },
+            { name: 'David', color: '#4ECDC4' },
+            { name: 'Emma', color: '#45B7D1' },
+            { name: 'Bob', color: '#FFA07A' },
+            { name: 'Frank', color: '#98D8C8' },
+            { name: 'Grace', color: '#F7DC6F' }
+        ];
+
+        function drawWheel(ctx, rotation, invertRotation = false) {
+            const centerX = 200;
+            const centerY = 200;
+            const radius = 150;
+
+            ctx.clearRect(0, 0, 400, 400);
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+
+            // Apply rotation - this is where the bug is!
+            const rotationRadians = (rotation * Math.PI) / 180;
+            if (invertRotation) {
+                ctx.rotate(-rotationRadians); // FIXED VERSION
+            } else {
+                ctx.rotate(rotationRadians); // BUGGY VERSION
+            }
+
+            // Draw segments (same logic as Wheel.tsx)
+            const anglePerSegment = (2 * Math.PI) / entries.length;
+
+            entries.forEach((entry, index) => {
+                // Offset by half segment (line 224 in Wheel.tsx)
+                const startAngle = index * anglePerSegment - Math.PI / 2 - anglePerSegment / 2;
+                const endAngle = startAngle + anglePerSegment;
+
+                // Draw segment
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = entry.color;
+                ctx.fill();
+
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw text
+                ctx.save();
+                ctx.rotate(startAngle + anglePerSegment / 2);
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(entry.name, radius - 10, 0);
+                ctx.restore();
+            });
+
+            ctx.restore();
+
+            // Draw pointer at TOP
+            ctx.beginPath();
+            ctx.moveTo(centerX, 10);
+            ctx.lineTo(centerX - 15, 40);
+            ctx.lineTo(centerX + 15, 40);
+            ctx.closePath();
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw center circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 30, 0, 2 * Math.PI);
+            ctx.fillStyle = '#6366f1';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Label pointer
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('POINTER', centerX, 60);
+        }
+
+        // Calculate rotation to win on David (index 1)
+        const targetWinnerIndex = 1;
+        const numEntries = entries.length;
+        const degreesPerSegment = 360 / numEntries;
+        const winnerCenterAngle = (targetWinnerIndex + 0.5) * degreesPerSegment;
+        const offsetAdjustment = degreesPerSegment / 2;
+        const targetRotation = -winnerCenterAngle + offsetAdjustment;
+
+        console.log('Trying to win:', entries[targetWinnerIndex].name);
+        console.log('Target rotation:', targetRotation, '°');
+
+        // Draw BUGGY version
+        drawWheel(document.getElementById('canvasBuggy').getContext('2d'), targetRotation, false);
+
+        // Draw FIXED version
+        drawWheel(document.getElementById('canvasFixed').getContext('2d'), targetRotation, true);
+    </script>
+</body>
+</html>
