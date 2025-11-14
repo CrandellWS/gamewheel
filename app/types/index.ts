@@ -29,6 +29,15 @@ export interface ChatIntegrationSettings {
   webhookUrl: string;
 }
 
+export interface CustomBackground {
+  pageBackground: string | null; // URL or data URI
+  wheelBackground: string | null; // URL or data URI
+  pageBackgroundOpacity: number; // 0-1
+  wheelBackgroundOpacity: number; // 0-1
+  wheelBackgroundBlendMode: 'source-over' | 'multiply' | 'screen' | 'overlay';
+  wheelBackgroundRotates: boolean; // Whether wheel background rotates with wheel
+}
+
 export interface WheelSettings {
   removeWinners: boolean;
   soundEnabled: boolean;
@@ -38,6 +47,7 @@ export interface WheelSettings {
   terminology: string;
   numberOfWinners: 1 | 3 | 4 | 8;
   chatIntegration: ChatIntegrationSettings;
+  customBackground: CustomBackground;
 }
 
 export interface WheelStore {

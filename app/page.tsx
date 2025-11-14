@@ -12,7 +12,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Toaster } from 'react-hot-toast';
 
 export default function Home() {
-  const { spin, entries, addEntry } = useWheelStore();
+  const { spin, entries, addEntry, settings } = useWheelStore();
   const [showSettings, setShowSettings] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
@@ -89,7 +89,21 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100
-                  dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
+                  dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 relative">
+      {/* Custom Page Background */}
+      {settings.customBackground.pageBackground && (
+        <div
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+          style={{
+            backgroundImage: `url(${settings.customBackground.pageBackground})`,
+            opacity: settings.customBackground.pageBackgroundOpacity,
+            zIndex: 0,
+          }}
+        />
+      )}
+
+      {/* Content wrapper with relative positioning */}
+      <div className="relative z-10">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -310,6 +324,7 @@ export default function Home() {
           />
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }

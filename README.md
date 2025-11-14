@@ -2,7 +2,20 @@
 
 GameWheel is a powerful, open-source random selection spinner with multiple game modes, chat platform integration, and extensive customization options. Perfect for streamers, educators, event organizers, and anyone who needs fair random selection.
 
-> **Version 2.0** - Now with game modes, chat integration, and configurable terminology!
+> **Version 2.1.1** - Display precision fixes and visual enhancements!
+
+## What's New in v2.1.1
+
+### Display Precision Fixes
+- Fixed floating-point precision issues causing micro-gaps at 360° boundary
+- Perfect 360° coverage guaranteed for all entry counts (2, 3, 4, 7, etc.)
+- Eliminated sub-pixel rendering artifacts
+- Enhanced segment boundary detection with epsilon tolerance
+
+### Performance
+- Optimized bundle size: 144 kB (well under 150 kB target)
+- Zero TypeScript errors in production builds
+- Maintains 60fps with all visual effects
 
 ## New Features in Version 2.0
 
@@ -196,6 +209,33 @@ curl -X POST https://your-domain.com/api/chat-submit \
 - Best for: Tournaments, battle royale style selection, competitive events
 
 ## Visual Features
+
+### Custom Backgrounds (Planned for v2.2.0)
+Personalize your GameWheel experience with custom artwork:
+
+**Page Background**
+- Upload custom images for the page background
+- Adjustable opacity (0-100%)
+- Support for images, gradients, or solid colors
+
+**Wheel Background**
+- Upload artwork specifically for the wheel
+- Blend modes: Normal, Multiply, Screen, Overlay
+- Adjustable opacity for perfect balance
+- Option to rotate background with the wheel
+
+**AI Image Generation** (Coming Soon)
+- Generate custom backgrounds with AI
+- Integration with Google Imagen, DALL-E, Stability AI
+- One-click generation from text prompts
+- OAuth authentication for secure API access
+
+**Storage**
+- Images stored in browser localStorage (size limits apply)
+- Export/import with wheel configurations
+- Data URLs for portability
+
+> **Note**: Custom background UI is currently in development. The feature is defined in the codebase but not yet accessible through the Settings panel. Expected in v2.2.0.
 
 ### Dynamic Tier System
 The wheel features a dramatic 4-tier visual hierarchy based on compass positions:

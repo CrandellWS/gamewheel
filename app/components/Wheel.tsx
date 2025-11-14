@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 
+// Tolerance for floating-point comparisons
+const ANGLE_EPSILON = 1e-6;
+
 // Color manipulation utilities
 const hexToRgb = (hex: string): {r: number, g: number, b: number} | null => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -153,6 +156,7 @@ const drawStar = (
 
 export function Wheel() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const backgroundImageRef = useRef<HTMLImageElement | null>(null);
   const {
     entries,
     isSpinning,
@@ -174,16 +178,43 @@ export function Wheel() {
   const [showConfetti, setShowConfetti] = useState(false);
   const [highlightWinner, setHighlightWinner] = useState(false);
   const [pulseFrame, setPulseFrame] = useState(0);
+  const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const lastSegmentRef = useRef(-1);
 
   const activeEntries = entries.filter((e) => !e.removed);
   const canSpin = activeEntries.length > 0 && !isSpinning && !isWaitingConfirmation;
+
+  // Load wheel background image when it changes
+  useEffect(() => {
+    if (settings.customBackground.wheelBackground) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous'; // For external URLs
+      img.onload = () => {
+        backgroundImageRef.current = img;
+        setBackgroundImageLoaded(true);
+      };
+      img.onerror = () => {
+        console.error('Failed to load wheel background image');
+        backgroundImageRef.current = null;
+        setBackgroundImageLoaded(false);
+      };
+      img.src = settings.customBackground.wheelBackground;
+    } else {
+      backgroundImageRef.current = null;
+      setBackgroundImageLoaded(false);
+    }
+  }, [settings.customBackground.wheelBackground]);
 
   // Helper function to normalize angles to 0-360 range
   const normalizeAngle = (angle: number): number => {
     let normalized = angle % 360;
     if (normalized < 0) normalized += 360;
     return normalized;
+  };
+
+  // Helper function to round angles for display consistency
+  const roundAngle = (angle: number): number => {
+    return Math.round(angle * 1e10) / 1e10; // Round to 10 decimal places
   };
 
   // Get size multiplier based on compass position - DRAMATIC SCALING
@@ -254,9 +285,11 @@ export function Wheel() {
 
     // Calculate cumulative angles for drawing
     let cumulativeAngle = 0;
-    const finalConfigs = normalizedConfigs.map(config => {
+    const finalConfigs = normalizedConfigs.map((config, idx) => {
       const startAngle = cumulativeAngle;
-      const endAngle = startAngle + config.visualAngle;
+      const isLastSlice = idx === normalizedConfigs.length - 1;
+      // Force last slice to end exactly at 360° to prevent gaps
+      const endAngle = isLastSlice ? 360 : startAngle + config.visualAngle;
       cumulativeAngle = endAngle;
 
       return {
@@ -358,27 +391,20 @@ export function Wheel() {
   useEffect(() => {
     if (isAnimating && activeEntries.length > 0) {
       const sliceConfigs = calculateSliceAngles();
-      const currentRotation = normalizeAngle(rotation);
+      const normalizedRotation = rotation % 360;
 
-      // Find which slice the pointer is currently at
-      let currentSegment = -1;
-      for (let i = 0; i < sliceConfigs.length; i++) {
-        const config = sliceConfigs[i];
-        // Check if current rotation is within this slice's range
-        if (currentRotation >= config.startAngle && currentRotation < config.endAngle) {
-          currentSegment = i;
-          break;
-        }
-      }
+      // Find which slice the pointer is currently at with epsilon tolerance
+      const currentSegment = sliceConfigs.findIndex(config => {
+        return normalizedRotation >= config.startAngle - ANGLE_EPSILON &&
+               normalizedRotation < config.endAngle + ANGLE_EPSILON;
+      });
 
-      // Handle wrap-around case (last slice to first slice)
-      if (currentSegment === -1 && sliceConfigs.length > 0) {
-        currentSegment = sliceConfigs.length - 1;
-      }
+      // If no match found (edge case), use last segment
+      const segmentIndex = currentSegment !== -1 ? currentSegment : sliceConfigs.length - 1;
 
-      if (currentSegment !== lastSegmentRef.current && currentSegment !== -1) {
+      if (segmentIndex !== lastSegmentRef.current && segmentIndex !== -1) {
         playTickSound();
-        lastSegmentRef.current = currentSegment;
+        lastSegmentRef.current = segmentIndex;
       }
     }
   }, [rotation, isAnimating, activeEntries.length]);
@@ -488,6 +514,51 @@ export function Wheel() {
     // CRITICAL: Negate rotation to match arc() clockwise convention with rotate() counter-clockwise
     ctx.rotate((-rotation * Math.PI) / 180);
 
+    // Draw wheel background image if available
+    if (backgroundImageRef.current && settings.customBackground.wheelBackground) {
+      ctx.save();
+
+      // If background shouldn't rotate, counter-rotate it
+      if (!settings.customBackground.wheelBackgroundRotates) {
+        ctx.rotate((rotation * Math.PI) / 180);
+      }
+
+      // Create circular clipping path
+      ctx.beginPath();
+      ctx.arc(0, 0, radius, 0, 2 * Math.PI);
+      ctx.clip();
+
+      // Apply opacity and blend mode
+      ctx.globalAlpha = settings.customBackground.wheelBackgroundOpacity;
+      ctx.globalCompositeOperation = settings.customBackground.wheelBackgroundBlendMode;
+
+      // Draw the image centered and scaled to fit the wheel
+      const img = backgroundImageRef.current;
+      const imgAspect = img.width / img.height;
+      const wheelAspect = 1; // Circular wheel is 1:1
+
+      let drawWidth, drawHeight;
+      if (imgAspect > wheelAspect) {
+        // Image is wider than wheel - fit to height
+        drawHeight = radius * 2;
+        drawWidth = drawHeight * imgAspect;
+      } else {
+        // Image is taller than wheel - fit to width
+        drawWidth = radius * 2;
+        drawHeight = drawWidth / imgAspect;
+      }
+
+      ctx.drawImage(
+        img,
+        -drawWidth / 2,
+        -drawHeight / 2,
+        drawWidth,
+        drawHeight
+      );
+
+      ctx.restore();
+    }
+
     // Get dynamic slice configurations
     const sliceConfigs = calculateSliceAngles();
 
@@ -497,8 +568,9 @@ export function Wheel() {
       const tierVisuals = getTierVisuals(config.tier);
 
       // Convert degrees to radians and offset for pointer position at top
-      const startAngle = (config.startAngle - 90) * (Math.PI / 180);
-      const endAngle = (config.endAngle - 90) * (Math.PI / 180);
+      // Apply rounding to eliminate sub-pixel gaps
+      const startAngle = (roundAngle(config.startAngle) - 90) * (Math.PI / 180);
+      const endAngle = (roundAngle(config.endAngle) - 90) * (Math.PI / 180);
       const centerAngle = (startAngle + endAngle) / 2;
 
       // Check if this entry is one of the winners
@@ -730,7 +802,19 @@ export function Wheel() {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 4;
     ctx.stroke();
-  }, [activeEntries, rotation, highlightWinner, targetWinnerId, targetWinnerIds, pulseFrame]);
+  }, [
+    activeEntries,
+    rotation,
+    highlightWinner,
+    targetWinnerId,
+    targetWinnerIds,
+    pulseFrame,
+    backgroundImageLoaded,
+    settings.customBackground.wheelBackground,
+    settings.customBackground.wheelBackgroundOpacity,
+    settings.customBackground.wheelBackgroundBlendMode,
+    settings.customBackground.wheelBackgroundRotates,
+  ]);
 
   // Continuous animation for pulsing winner effect
   useEffect(() => {

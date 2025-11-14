@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useWheelStore } from '../stores/wheelStore';
-import { X, Download, Upload, Settings as SettingsIcon, Copy, Check, ExternalLink, AlertCircle } from 'lucide-react';
+import { X, Download, Upload, Settings as SettingsIcon, Copy, Check, ExternalLink, AlertCircle, Wand2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { BackgroundUpload } from './BackgroundUpload';
+import { AIImageGenerator } from './AIImageGenerator';
+import { AnimatePresence } from 'framer-motion';
 
 interface SettingsProps {
   onClose: () => void;
@@ -31,6 +34,7 @@ export function Settings({ onClose }: SettingsProps) {
   const [customWebhookUrl, setCustomWebhookUrl] = useState(
     settings.chatIntegration.webhookUrl
   );
+  const [showAIGenerator, setShowAIGenerator] = useState(false);
 
   // Detect if running on static hosting (GitHub Pages, etc.)
   const isStaticHosting = typeof window !== 'undefined'
@@ -809,6 +813,116 @@ export function Settings({ onClose }: SettingsProps) {
             )}
           </div>
 
+          {/* Custom Backgrounds */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+              Custom Backgrounds
+            </h3>
+
+            {/* Page Background */}
+            <div className="mb-6">
+              <BackgroundUpload
+                label="Page Background"
+                currentImage={settings.customBackground.pageBackground}
+                opacity={settings.customBackground.pageBackgroundOpacity}
+                onImageChange={(image) =>
+                  updateSettings({
+                    customBackground: {
+                      ...settings.customBackground,
+                      pageBackground: image,
+                    },
+                  })
+                }
+                onOpacityChange={(opacity) =>
+                  updateSettings({
+                    customBackground: {
+                      ...settings.customBackground,
+                      pageBackgroundOpacity: opacity,
+                    },
+                  })
+                }
+              />
+            </div>
+
+            {/* Wheel Background */}
+            <div className="mb-4">
+              <BackgroundUpload
+                label="Wheel Background"
+                currentImage={settings.customBackground.wheelBackground}
+                opacity={settings.customBackground.wheelBackgroundOpacity}
+                blendMode={settings.customBackground.wheelBackgroundBlendMode}
+                showBlendMode={true}
+                onImageChange={(image) =>
+                  updateSettings({
+                    customBackground: {
+                      ...settings.customBackground,
+                      wheelBackground: image,
+                    },
+                  })
+                }
+                onOpacityChange={(opacity) =>
+                  updateSettings({
+                    customBackground: {
+                      ...settings.customBackground,
+                      wheelBackgroundOpacity: opacity,
+                    },
+                  })
+                }
+                onBlendModeChange={(mode) =>
+                  updateSettings({
+                    customBackground: {
+                      ...settings.customBackground,
+                      wheelBackgroundBlendMode: mode,
+                    },
+                  })
+                }
+              />
+            </div>
+
+            {/* Wheel Background Rotation Option */}
+            <label className="flex items-center justify-between p-3 bg-gray-50
+                            dark:bg-gray-700 rounded-lg cursor-pointer
+                            hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+              <span className="text-sm text-gray-900 dark:text-white">
+                Rotate wheel background with wheel
+              </span>
+              <input
+                type="checkbox"
+                checked={settings.customBackground.wheelBackgroundRotates}
+                onChange={(e) =>
+                  updateSettings({
+                    customBackground: {
+                      ...settings.customBackground,
+                      wheelBackgroundRotates: e.target.checked,
+                    },
+                  })
+                }
+                className="w-5 h-5 text-indigo-600 rounded focus:ring-2
+                         focus:ring-indigo-500"
+              />
+            </label>
+          </div>
+
+          {/* AI Image Generation */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+              AI Image Generation
+            </h3>
+            <button
+              onClick={() => setShowAIGenerator(true)}
+              className="w-full flex items-center justify-center gap-2 p-4
+                       bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg
+                       hover:from-purple-700 hover:to-pink-700 transition-all font-medium
+                       shadow-lg hover:shadow-xl"
+            >
+              <Wand2 className="w-5 h-5" />
+              Generate AI Images for Backgrounds
+            </button>
+            <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 text-center">
+              Use AI to create custom backgrounds (Google Imagen, DALL-E, Stability AI)
+            </p>
+          </div>
+
           {/* Import/Export */}
           <div>
             <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
@@ -875,6 +989,33 @@ export function Settings({ onClose }: SettingsProps) {
           </div>
         </div>
       </motion.div>
+
+      {/* AI Image Generator Modal */}
+      <AnimatePresence>
+        {showAIGenerator && (
+          <AIImageGenerator
+            onClose={() => setShowAIGenerator(false)}
+            onImageGenerated={(imageUrl, applyTo) => {
+              if (applyTo === 'page') {
+                updateSettings({
+                  customBackground: {
+                    ...settings.customBackground,
+                    pageBackground: imageUrl,
+                  },
+                });
+              } else if (applyTo === 'wheel') {
+                updateSettings({
+                  customBackground: {
+                    ...settings.customBackground,
+                    wheelBackground: imageUrl,
+                  },
+                });
+              }
+              setShowAIGenerator(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

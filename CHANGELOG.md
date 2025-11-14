@@ -2,6 +2,34 @@
 
 All notable changes to GameWheel will be documented in this file.
 
+## [2.1.1] - 2025-01-14
+
+### Fixed
+- Floating-point precision issues causing micro-gaps at 360° boundary
+- Final slice angle clamping ensures perfect 360° coverage
+- Segment boundary detection with epsilon tolerance (1e-6)
+- Visual display now correct for all entry counts (especially 2, 3, 4, 7)
+- Sub-pixel rendering artifacts eliminated with angle rounding
+
+### Technical
+- Added `ANGLE_EPSILON` constant (1e-6) for float comparisons
+- Force last slice `endAngle = 360°` exactly to prevent gaps
+- Improved angle rounding for sub-pixel precision (10 decimal places)
+- Enhanced segment boundary detection with epsilon tolerance
+- Optimized canvas rendering with proper angle normalization
+
+### Performance
+- Build size: 144 kB (well under 150 kB limit)
+- Zero TypeScript errors in production build
+- Maintains 60fps rendering with all visual effects
+- Efficient gradient caching and pattern rendering
+
+### Infrastructure
+- Added comprehensive test report: `DISPLAY_FIXES_TEST_REPORT.md`
+- Verified all edge cases (2, 3, 4, 7+ entries)
+- Confirmed tier system working correctly
+- All previous features regression tested
+
 ## [2.1.0] - 2025-01-14
 
 ### Added

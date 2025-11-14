@@ -118,6 +118,14 @@ export const useWheelStore = create<WheelStore>()(
           },
           webhookUrl: '',
         },
+        customBackground: {
+          pageBackground: null,
+          wheelBackground: null,
+          pageBackgroundOpacity: 0.3,
+          wheelBackgroundOpacity: 0.2,
+          wheelBackgroundBlendMode: 'source-over',
+          wheelBackgroundRotates: false,
+        },
       },
 
       addEntry: (name: string, color?: string) => {
