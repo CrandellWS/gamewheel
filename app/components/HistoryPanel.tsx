@@ -23,14 +23,17 @@ export function HistoryPanel() {
 
   const exportHistory = () => {
     const csv = [
-      'Winner,Type,Game Mode,Timestamp,Date',
+      'Winner,Type,Game Mode,Timestamp,Date,Ladder Climb From,Ladder Climb To,Full Tilt Winner',
       ...history.map((h) =>
         [
           h.winner,
-          h.isElimination ? 'Elimination' : 'Win',
+          h.isElimination ? 'Elimination' : h.fullTiltWinner ? 'Full Tilt Winner' : 'Win',
           h.gameMode || 'first-win',
           h.timestamp,
           new Date(h.timestamp).toISOString(),
+          h.ladderClimb?.fromRung ?? '',
+          h.ladderClimb?.toRung ?? '',
+          h.fullTiltWinner ? 'Yes' : 'No',
         ].join(',')
       ),
     ].join('\n');
@@ -95,12 +98,14 @@ export function HistoryPanel() {
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center
                            text-white font-bold text-sm shadow-md ${
-                    result.isElimination
+                    result.fullTiltWinner
+                      ? 'bg-gradient-to-br from-yellow-400 to-amber-500'
+                      : result.isElimination
                       ? 'bg-gradient-to-br from-red-500 to-orange-600'
                       : 'bg-gradient-to-br from-indigo-500 to-purple-600'
                   }`}
                 >
-                  {result.isElimination ? '❌' : index + 1}
+                  {result.fullTiltWinner ? '🏆' : result.isElimination ? '❌' : index + 1}
                 </div>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">
@@ -108,11 +113,22 @@ export function HistoryPanel() {
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formatTime(result.timestamp)}
+                    {result.ladderClimb && (
+                      <span className="ml-2 text-indigo-600 dark:text-indigo-400 font-semibold">
+                        📈 {result.ladderClimb.fromRung} → {result.ladderClimb.toRung}
+                      </span>
+                    )}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2">
-                {result.isElimination && (
+                {result.fullTiltWinner && (
+                  <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800
+                                 dark:text-yellow-200 text-xs font-semibold rounded-full">
+                    Champion
+                  </span>
+                )}
+                {result.isElimination && !result.fullTiltWinner && (
                   <span className="px-2 py-1 bg-red-100 dark:bg-red-900 text-red-800
                                  dark:text-red-200 text-xs font-semibold rounded-full">
                     Eliminated

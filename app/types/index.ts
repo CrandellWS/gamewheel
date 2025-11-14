@@ -6,7 +6,7 @@ export interface Entry {
   removed: boolean;
 }
 
-export type GameMode = 'first-win' | 'last-remaining';
+export type GameMode = 'first-win' | 'last-remaining' | 'full-tilt';
 
 export interface SpinResult {
   id: string;
@@ -16,6 +16,13 @@ export interface SpinResult {
   isElimination?: boolean;
   gameMode?: GameMode;
   numberOfWinners?: number;
+  ladderClimb?: {
+    playerId: string;
+    playerName: string;
+    fromRung: number;
+    toRung: number;
+  };
+  fullTiltWinner?: boolean;
 }
 
 export interface ChatIntegrationSettings {
@@ -48,6 +55,7 @@ export interface WheelSettings {
   numberOfWinners: 1 | 3 | 4 | 8;
   chatIntegration: ChatIntegrationSettings;
   customBackground: CustomBackground;
+  ladderHeight: 3 | 5 | 7 | 10;
 }
 
 export interface WheelStore {
@@ -60,6 +68,8 @@ export interface WheelStore {
   targetWinnerIds: string[];
   isWaitingConfirmation: boolean;
   settings: WheelSettings;
+  ladderPositions: Record<string, number>;
+  fullTiltWinner: string | null;
 
   // Entry management
   addEntry: (name: string, color?: string) => void;

@@ -250,8 +250,55 @@ export function Settings({ onClose }: SettingsProps) {
                   </div>
                 </div>
               </label>
+
+              <label className="flex items-start p-4 bg-gray-50 dark:bg-gray-700
+                              rounded-lg cursor-pointer hover:bg-gray-100
+                              dark:hover:bg-gray-600 transition-colors border-2
+                              ${settings.gameMode === 'full-tilt' ? 'border-indigo-500' : 'border-transparent'}">
+                <input
+                  type="radio"
+                  name="gameMode"
+                  checked={settings.gameMode === 'full-tilt'}
+                  onChange={() => updateSettings({ gameMode: 'full-tilt' })}
+                  className="mt-1 w-5 h-5 text-indigo-600"
+                />
+                <div className="ml-3">
+                  <div className="font-semibold text-gray-900 dark:text-white">
+                    🎢 Full Tilt (Ladder Climb)
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    Each spin moves a player up one rung. First to reach the top wins everything!
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
+
+          {/* Ladder Height (Full Tilt Mode Only) */}
+          {settings.gameMode === 'full-tilt' && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
+                Ladder Height
+              </h3>
+              <select
+                value={settings.ladderHeight}
+                onChange={(e) =>
+                  updateSettings({ ladderHeight: parseInt(e.target.value) as 3 | 5 | 7 | 10 })
+                }
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600
+                         rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                         dark:bg-gray-700 dark:text-white"
+              >
+                <option value={3}>3 Rungs (Quick Game)</option>
+                <option value={5}>5 Rungs (Standard)</option>
+                <option value={7}>7 Rungs (Extended)</option>
+                <option value={10}>10 Rungs (Marathon)</option>
+              </select>
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                Players must climb {settings.ladderHeight} rungs to win
+              </p>
+            </div>
+          )}
 
           {/* Number of Winners */}
           <div>

@@ -2,26 +2,38 @@
 
 GameWheel is a powerful, open-source random selection spinner with multiple game modes, chat platform integration, and extensive customization options. Perfect for streamers, educators, event organizers, and anyone who needs fair random selection.
 
-> **Version 2.1.1** - Display precision fixes and visual enhancements!
+> **Version 2.2.0** - Full Tilt ladder climb mode released!
 
-## What's New in v2.1.1
+## What's New in v2.2.0
 
-### Display Precision Fixes
+### 🎢 Full Tilt Mode - All-or-Nothing Ladder Climb
+- **New Game Mode**: Dramatic ladder-climbing competition where players race to the top
+- **Configurable Heights**: Choose 3, 5, 7, or 10 rungs for different game lengths
+- **Visual Ladder Display**: Real-time animated progress tracker showing all player positions
+- **Champion Celebration**: Confetti and special animations when someone reaches the top
+- **Complete Tracking**: Ladder climb data in history and CSV exports
+- **Learn More**: See [FULL_TILT_USER_GUIDE.md](./FULL_TILT_USER_GUIDE.md) for detailed gameplay
+
+### How Full Tilt Works
+1. Players start at the bottom of the ladder
+2. Each wheel spin selects one player who climbs up one rung
+3. First player to reach the top wins everything!
+4. Perfect for creating suspense and progressive competition
+
+## Previous Updates
+
+### v2.1.1 - Display Precision Fixes
 - Fixed floating-point precision issues causing micro-gaps at 360° boundary
 - Perfect 360° coverage guaranteed for all entry counts (2, 3, 4, 7, etc.)
 - Eliminated sub-pixel rendering artifacts
 - Enhanced segment boundary detection with epsilon tolerance
 
-### Performance
-- Optimized bundle size: 144 kB (well under 150 kB target)
-- Zero TypeScript errors in production builds
-- Maintains 60fps with all visual effects
-
-## New Features in Version 2.0
+### v2.0 - Game Modes & Chat Integration
 
 ### 🎮 Game Modes
 - **First Win**: Traditional mode where the wheel spins once and the selected entry wins
 - **Last Remaining (Elimination)**: Competitive mode where selected entries are eliminated until only one remains as the ultimate winner
+- **Full Tilt (Ladder Climb)**: NEW! All-or-nothing ladder race to the top
 
 ### 💬 Chat Integration
 - Accept contestant submissions from Twitch, Discord, and YouTube

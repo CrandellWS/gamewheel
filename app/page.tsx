@@ -6,6 +6,7 @@ import { EntryList } from './components/EntryList';
 import { HistoryPanel } from './components/HistoryPanel';
 import { Settings } from './components/Settings';
 import { WelcomeModal } from './components/WelcomeModal';
+import { LadderDisplay } from './components/LadderDisplay';
 import { useWheelStore } from './stores/wheelStore';
 import { Moon, Sun, Settings as SettingsIcon, Github, Keyboard } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
@@ -207,6 +208,13 @@ export default function Home() {
                 </p>
               </div>
             </div>
+
+            {/* Ladder Display - Full Tilt Mode Only */}
+            {settings.gameMode === 'full-tilt' && (
+              <div className="mt-6">
+                <LadderDisplay />
+              </div>
+            )}
           </div>
 
           {/* Sidebar - Entry List and History */}
@@ -225,7 +233,7 @@ export default function Home() {
               Game Modes
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              First Win or Last Remaining elimination mode for competitive gameplay
+              First Win, Last Remaining, or Full Tilt ladder climb for competitive gameplay
             </p>
           </div>
 

@@ -126,7 +126,10 @@ export const useWheelStore = create<WheelStore>()(
           wheelBackgroundBlendMode: 'source-over',
           wheelBackgroundRotates: false,
         },
+        ladderHeight: 5,
       },
+      ladderPositions: {},
+      fullTiltWinner: null,
 
       addEntry: (name: string, color?: string) => {
         if (!name.trim()) return;
@@ -187,6 +190,7 @@ export const useWheelStore = create<WheelStore>()(
         // Select primary winner BEFORE spinning starts
         const primaryWinner = selectWinner(activeEntries);
         const isLastRemainingMode = state.settings.gameMode === 'last-remaining';
+        const isFullTiltMode = state.settings.gameMode === 'full-tilt';
 
         // Select all winners based on compass positions
         const allWinners = selectMultipleWinners(
@@ -214,6 +218,30 @@ export const useWheelStore = create<WheelStore>()(
 
         const winnerNames = allWinners.map(w => w.name);
 
+        // Full Tilt Mode: Update ladder positions
+        let fullTiltWinner = null;
+        let ladderClimbData: { playerId: string; playerName: string; fromRung: number; toRung: number; } | undefined;
+        if (isFullTiltMode) {
+          const currentPositions = { ...state.ladderPositions };
+          const currentRung = currentPositions[primaryWinner.id] || 0;
+          const newRung = currentRung + 1;
+          currentPositions[primaryWinner.id] = newRung;
+
+          ladderClimbData = {
+            playerId: primaryWinner.id,
+            playerName: primaryWinner.name,
+            fromRung: currentRung,
+            toRung: newRung,
+          };
+
+          // Check if player reached the top
+          if (newRung >= state.settings.ladderHeight) {
+            fullTiltWinner = primaryWinner.name;
+          }
+
+          set({ ladderPositions: currentPositions, fullTiltWinner });
+        }
+
         set((state) => ({
           isSpinning: false,
           winner: primaryWinner.name,
@@ -228,6 +256,8 @@ export const useWheelStore = create<WheelStore>()(
               isElimination: isLastRemainingMode,
               gameMode: state.settings.gameMode,
               numberOfWinners: state.settings.numberOfWinners,
+              ladderClimb: isFullTiltMode ? ladderClimbData : undefined,
+              fullTiltWinner: isFullTiltMode && fullTiltWinner !== null,
             },
             ...state.history,
           ].slice(0, 50), // Keep last 50 results
@@ -279,6 +309,8 @@ export const useWheelStore = create<WheelStore>()(
           targetWinnerId: null,
           targetWinnerIds: [],
           isWaitingConfirmation: false,
+          ladderPositions: {},
+          fullTiltWinner: null,
         }));
       },
 
@@ -327,8 +359,8 @@ export const useWheelStore = create<WheelStore>()(
     }),
     {
       name: 'gamewheel-storage',
-      version: 1,
-      migrate: (persistedState: any) => {
+      version: 2,
+      migrate: (persistedState: any, version: number) => {
         // Ensure customBackground exists in settings
         if (!persistedState?.settings?.customBackground) {
           persistedState.settings = {
@@ -343,12 +375,26 @@ export const useWheelStore = create<WheelStore>()(
             },
           };
         }
+        // Add Full Tilt ladder height setting
+        if (persistedState?.settings && !persistedState.settings.ladderHeight) {
+          persistedState.settings.ladderHeight = 5;
+        }
+        // Add ladder positions if missing
+        if (!persistedState.ladderPositions) {
+          persistedState.ladderPositions = {};
+        }
+        // Add fullTiltWinner if missing
+        if (persistedState.fullTiltWinner === undefined) {
+          persistedState.fullTiltWinner = null;
+        }
         return persistedState;
       },
       partialize: (state) => ({
         entries: state.entries,
         history: state.history,
         settings: state.settings,
+        ladderPositions: state.ladderPositions,
+        fullTiltWinner: state.fullTiltWinner,
       }),
     }
   )
