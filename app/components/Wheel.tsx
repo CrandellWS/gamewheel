@@ -186,7 +186,7 @@ export function Wheel() {
 
   // Load wheel background image when it changes
   useEffect(() => {
-    if (settings.customBackground.wheelBackground) {
+    if (settings?.customBackground?.wheelBackground) {
       const img = new Image();
       img.crossOrigin = 'anonymous'; // For external URLs
       img.onload = () => {
@@ -203,7 +203,7 @@ export function Wheel() {
       backgroundImageRef.current = null;
       setBackgroundImageLoaded(false);
     }
-  }, [settings.customBackground.wheelBackground]);
+  }, [settings?.customBackground?.wheelBackground]);
 
   // Helper function to normalize angles to 0-360 range
   const normalizeAngle = (angle: number): number => {
@@ -515,11 +515,11 @@ export function Wheel() {
     ctx.rotate((-rotation * Math.PI) / 180);
 
     // Draw wheel background image if available
-    if (backgroundImageRef.current && settings.customBackground.wheelBackground) {
+    if (backgroundImageRef.current && settings?.customBackground?.wheelBackground) {
       ctx.save();
 
       // If background shouldn't rotate, counter-rotate it
-      if (!settings.customBackground.wheelBackgroundRotates) {
+      if (!settings?.customBackground?.wheelBackgroundRotates) {
         ctx.rotate((rotation * Math.PI) / 180);
       }
 
@@ -529,8 +529,8 @@ export function Wheel() {
       ctx.clip();
 
       // Apply opacity and blend mode
-      ctx.globalAlpha = settings.customBackground.wheelBackgroundOpacity;
-      ctx.globalCompositeOperation = settings.customBackground.wheelBackgroundBlendMode;
+      ctx.globalAlpha = settings?.customBackground?.wheelBackgroundOpacity ?? 0.2;
+      ctx.globalCompositeOperation = settings?.customBackground?.wheelBackgroundBlendMode ?? 'source-over';
 
       // Draw the image centered and scaled to fit the wheel
       const img = backgroundImageRef.current;
@@ -810,10 +810,10 @@ export function Wheel() {
     targetWinnerIds,
     pulseFrame,
     backgroundImageLoaded,
-    settings.customBackground.wheelBackground,
-    settings.customBackground.wheelBackgroundOpacity,
-    settings.customBackground.wheelBackgroundBlendMode,
-    settings.customBackground.wheelBackgroundRotates,
+    settings?.customBackground?.wheelBackground,
+    settings?.customBackground?.wheelBackgroundOpacity,
+    settings?.customBackground?.wheelBackgroundBlendMode,
+    settings?.customBackground?.wheelBackgroundRotates,
   ]);
 
   // Continuous animation for pulsing winner effect

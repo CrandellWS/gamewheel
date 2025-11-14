@@ -91,12 +91,12 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100
                   dark:from-gray-900 dark:to-gray-800 transition-colors duration-300 relative">
       {/* Custom Page Background */}
-      {settings.customBackground.pageBackground && (
+      {settings?.customBackground?.pageBackground && (
         <div
           className="fixed inset-0 bg-cover bg-center bg-no-repeat pointer-events-none"
           style={{
             backgroundImage: `url(${settings.customBackground.pageBackground})`,
-            opacity: settings.customBackground.pageBackgroundOpacity,
+            opacity: settings?.customBackground?.pageBackgroundOpacity ?? 0.3,
             zIndex: 0,
           }}
         />

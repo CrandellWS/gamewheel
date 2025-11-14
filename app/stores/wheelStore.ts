@@ -327,6 +327,24 @@ export const useWheelStore = create<WheelStore>()(
     }),
     {
       name: 'gamewheel-storage',
+      version: 1,
+      migrate: (persistedState: any) => {
+        // Ensure customBackground exists in settings
+        if (!persistedState?.settings?.customBackground) {
+          persistedState.settings = {
+            ...persistedState.settings,
+            customBackground: {
+              pageBackground: null,
+              wheelBackground: null,
+              pageBackgroundOpacity: 0.3,
+              wheelBackgroundOpacity: 0.2,
+              wheelBackgroundBlendMode: 'source-over',
+              wheelBackgroundRotates: false,
+            },
+          };
+        }
+        return persistedState;
+      },
       partialize: (state) => ({
         entries: state.entries,
         history: state.history,

@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href={`${process.env.NODE_ENV === 'production' ? '/gamewheel' : ''}/manifest.json`} />
         <meta name="theme-color" content="#4f46e5" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
